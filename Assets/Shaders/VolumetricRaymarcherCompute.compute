@@ -1,0 +1,48 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "VolumetricCommon.hlsl"
+ 
+RW_TEXTURE2D_X(float4, _Result);
+RW_TEXTURE2D_X(float2, _ReprojectionPositions);
+
+float2 _UpdateOffset;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float width, height, d;
+    _Result.GetDimensions(width, height, d);
+
+    uint2 pixel = id.xy * _Downscale + _UpdateOffset;
+    
+    float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
+    float depth = LinearEyeDepth(SampleCameraDepth(uv), _ZBufferParams);
+    float3 viewDirection = getViewDir(uv);
+    
+    float2 tParams = Intersection(_WorldSpaceCameraPos, 1.0f / viewDirection);
+    
+    float depthExtended = depth >= _ProjectionParams.z - 1.0f ? 10000000 : depth; 
+    tParams.y = min(tParams.y + tParams.x, depthExtended) - tParams.x;
+    float3 startPos = _WorldSpaceCameraPos + viewDirection * (tParams.x + Random(pixel.x / 11.9f + _Time.y * pixel.y / 18.5f) * _BufferDistance);
+    float extend = SDFRaymarch(startPos, viewDirection, tParams.y);
+    startPos += viewDirection * extend;
+    tParams.x += extend;
+    tParams.y -= extend;
+    _ReprojectionPositions[id] = float2(tParams.x / _ProjectionParams.z, 0);
+    if (tParams.y <= 0.f)
+    {
+        // _ReprojectionPositions[id] = float2(tParams.x / _ProjectionParams.z, 0);
+        // _ReprojectionPositions[id] = float2(1.0f, 0);
+        _Result[uint3(pixel.xy, id.z)] = 0;
+        return;
+    }
+
+    float2 reproj;
+    float4 col = Raymarch(startPos, viewDirection, tParams.x, tParams.y, reproj);
+    if (reproj.y > 0.5f)
+    {
+        _ReprojectionPositions[id] = reproj;
+    }
+    _Result[uint3(pixel.xy, id.z)] = col;
+}

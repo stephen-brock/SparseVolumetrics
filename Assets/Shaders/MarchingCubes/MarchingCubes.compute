@@ -1,0 +1,101 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#pragma debug
+
+#include "MarchingTable.hlsl"
+#include "../VolumetricCommon.hlsl"
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+//https://polycoding.net/marching-cubes/part-1/#algorithm
+
+struct Triangle
+{
+    float4 a,b,c;
+};
+
+AppendStructuredBuffer<Triangle> Triangles;
+
+float4 interp(float3 edgeVertex1, float valueAtVertex1, float3 edgeVertex2, float valueAtVertex2)
+{
+    return float4((edgeVertex1 + (0.05f - valueAtVertex1) * (edgeVertex2 - edgeVertex1)  / (valueAtVertex2 - valueAtVertex1)), 1.0f);
+}
+
+float _Resolution;
+float3 _Offset;
+
+[numthreads(8,8,8)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float width, height, depth;
+    _DensityMap.GetDimensions(width, height, depth);
+    uint cubeIndex = 0;
+    float3 loc = float3(id + _Offset) / _Resolution;
+    float2 offset = float2(1.0f, 0);
+    
+    float4 offsetDirection = float4(2.0f * _Width, _MaxHeight - _MinHeight, 2.0f * _Width, 0) / _Resolution;
+    float4 worldPos = float4(_Width * (loc.x * 2.0f - 1), _MinHeight + loc.y * (_MaxHeight - _MinHeight), _Width * (loc.z * 2.0f - 1), 0);
+    float cubeValues[8] = {
+        DensityFunction(_DensityMap.SampleLevel(s_linear_repeat_sampler, (worldPos + offset.yyx * offsetDirection) * _Scale, 0).r),
+        DensityFunction(_DensityMap.SampleLevel(s_linear_repeat_sampler, (worldPos + offset.xyx * offsetDirection) * _Scale, 0).r),
+        DensityFunction(_DensityMap.SampleLevel(s_linear_repeat_sampler, (worldPos + offset.xyy * offsetDirection) * _Scale, 0).r),
+        DensityFunction(_DensityMap.SampleLevel(s_linear_repeat_sampler, (worldPos + offset.yyy * offsetDirection) * _Scale, 0).r),
+        DensityFunction(_DensityMap.SampleLevel(s_linear_repeat_sampler, (worldPos + offset.yxx * offsetDirection) * _Scale, 0).r),
+        DensityFunction(_DensityMap.SampleLevel(s_linear_repeat_sampler, (worldPos + offset.xxx * offsetDirection) * _Scale, 0).r),
+        DensityFunction(_DensityMap.SampleLevel(s_linear_repeat_sampler, (worldPos + offset.xxy * offsetDirection) * _Scale, 0).r),
+        DensityFunction(_DensityMap.SampleLevel(s_linear_repeat_sampler, (worldPos + offset.yxy * offsetDirection) * _Scale, 0).r)
+     };
+    if (cubeValues[0] > 0.05f)
+    {
+        cubeIndex |= 1;
+    }
+    if (cubeValues[1] > 0.05f)
+    {
+        cubeIndex |= 2;
+    }
+    if (cubeValues[2] > 0.05f)
+    {
+        cubeIndex |= 4;
+    }
+    if (cubeValues[3] > 0.05f)
+    {
+        cubeIndex |= 8;
+    }
+    if (cubeValues[4] > 0.05f)
+    {
+        cubeIndex |= 16;
+    }
+    if (cubeValues[5] > 0.05f)
+    {
+        cubeIndex |= 32;
+    }
+    if (cubeValues[6] > 0.05f)
+    {
+        cubeIndex |= 64;
+    }
+    if (cubeValues[7] > 0.05f)
+    {
+        cubeIndex |= 128;
+    }
+
+    int edges[16] = triTable[cubeIndex];
+
+    for (int i = 0; edges[i] != -1; i += 3)
+    {
+        int e00 = edgeConnections[edges[i]][0];
+        int e01 = edgeConnections[edges[i]][1];
+        
+        int e10 = edgeConnections[edges[i + 1]][0];
+        int e11 = edgeConnections[edges[i + 1]][1];
+        
+        int e20 = edgeConnections[edges[i + 2]][0];
+        int e21 = edgeConnections[edges[i + 2]][1];
+        Triangle tri;
+        tri.a = interp(cornerOffsets[e00], cubeValues[e00], cornerOffsets[e01], cubeValues[e01]) * offsetDirection + worldPos;
+        tri.b = interp(cornerOffsets[e10], cubeValues[e10], cornerOffsets[e11], cubeValues[e11]) * offsetDirection + worldPos;
+        tri.c = interp(cornerOffsets[e20], cubeValues[e20], cornerOffsets[e21], cubeValues[e21]) * offsetDirection + worldPos;
+        Triangles.Append(tri);
+    }
+}
