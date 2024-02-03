@@ -12,10 +12,11 @@ public class TextureGenerator : MonoBehaviour
     [SerializeField] private ComputeShader textureCompute;
     [SerializeField, ReadOnly] private RenderTexture output;
     [SerializeField, Header("Parameters")] private int width = 128;
-    [SerializeField] private int cellsPerWidth = 8;
+    [SerializeField] private Vector3 cellsPerWidth = Vector3.one;
     [Space] [SerializeField] private int octaves = 4;
     [SerializeField] private float persistance = 0.75f;
     [SerializeField] private float lacunarity = 0.5f;
+    [SerializeField] private float mult = 0.4f;
 
     [Space] [SerializeField] private bool run;
     [SerializeField] private bool runAndSave;
@@ -51,8 +52,10 @@ public class TextureGenerator : MonoBehaviour
             Texture3D output = new Texture3D(width, height, depth, rt3D.graphicsFormat, TextureCreationFlags.None);
             output.SetPixelData(a, 0);
             output.Apply(updateMipmaps: false, makeNoLongerReadable: true);
+            #if UNITY_EDITOR
             AssetDatabase.CreateAsset(output, $"Assets/{pathWithoutAssetsAndExtension}.asset");
             AssetDatabase.SaveAssetIfDirty(output);
+            #endif
             a.Dispose();
             rt3D.Release();
         });
@@ -61,33 +64,47 @@ public class TextureGenerator : MonoBehaviour
 
     private RenderTexture GenerateTexture()
     {
-        RenderTexture tex = new RenderTexture(width, width, 0, RenderTextureFormat.R8);
+        RenderTexture tex = new RenderTexture(width, width, 0, GraphicsFormat.R8_UNorm);
         tex.dimension = TextureDimension.Tex3D;
         tex.volumeDepth = width;
         tex.enableRandomWrite = true;
         tex.Create();
         
-        RenderTexture tex2 = new RenderTexture(tex.descriptor);
-        tex2.enableRandomWrite = true;
-        tex2.Create();
+        
+        RenderTexture texa = new RenderTexture(width, width, 0, GraphicsFormat.R32_SFloat);
+        texa.dimension = TextureDimension.Tex3D;
+        texa.volumeDepth = width;
+        texa.enableRandomWrite = true;
+        texa.Create();
+        
+        RenderTexture texb = new RenderTexture(texa.descriptor);
+        texb.enableRandomWrite = true;
+        texb.Create();
 
-        int currentCPW = cellsPerWidth;
+        Vector3 currentCPW = cellsPerWidth;
         float amplitude = 1;
         for (int i = 0; i < octaves; i++)
         {
             textureCompute.SetFloat("_Amplitude", amplitude);
-            textureCompute.SetFloat("_CellsPerWidth", currentCPW);
-            textureCompute.SetTexture(0, "_Input", tex);
-            textureCompute.SetTexture(0, "_Output", tex2);
+            textureCompute.SetVector("_CellsPerWidth", currentCPW);
+            textureCompute.SetTexture(0, "_Input", texa);
+            textureCompute.SetTexture(0, "_Output", texb);
             textureCompute.Dispatch(0, width / 4, width / 4, width / 4);
             amplitude *= persistance;
-            currentCPW = (int)(currentCPW / lacunarity);
-            var temp = tex2;
-            tex2 = tex;
-            tex = temp;
+            currentCPW = (currentCPW / lacunarity);
+            currentCPW = new Vector3(Mathf.Floor(currentCPW.x), Mathf.Floor(currentCPW.y), Mathf.Floor(currentCPW.z));
+            var temp = texb;
+            texb = texa;
+            texa = temp;
         }
 
-        tex2.Release();
+        textureCompute.SetFloat("_Mult", mult);
+        textureCompute.SetTexture(1, "_Input", texa);
+        textureCompute.SetTexture(1, "_Output", tex);
+        textureCompute.Dispatch(1, width / 4, width / 4, width / 4);
+
+        texa.Release();
+        texb.Release();
         
         return tex;
     }

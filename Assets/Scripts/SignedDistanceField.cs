@@ -64,8 +64,10 @@ public class SignedDistanceField : MonoBehaviour
             Texture3D output = new Texture3D(width, height, depth, rt3D.graphicsFormat, TextureCreationFlags.None);
             output.SetPixelData(a, 0);
             output.Apply(updateMipmaps: false, makeNoLongerReadable: true);
+#if UNITY_EDITOR
             AssetDatabase.CreateAsset(output, $"Assets/{pathWithoutAssetsAndExtension}.asset");
             AssetDatabase.SaveAssetIfDirty(output);
+            #endif
             a.Dispose();
             rt3D.Release();
         });
@@ -87,8 +89,10 @@ public class SignedDistanceField : MonoBehaviour
             Texture3D output = new Texture3D(width, height, depth, rt3D.graphicsFormat, TextureCreationFlags.None);
             output.SetPixelData(a, 0);
             output.Apply(updateMipmaps: false, makeNoLongerReadable: true);
+            #if UNITY_EDITOR
             AssetDatabase.CreateAsset(output, $"Assets/{pathWithoutAssetsAndExtension}.asset");
             AssetDatabase.SaveAssetIfDirty(output);
+            #endif
             a.Dispose();
             rt3D.Release();
         });

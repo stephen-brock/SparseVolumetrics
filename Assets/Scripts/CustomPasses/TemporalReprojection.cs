@@ -20,12 +20,13 @@ public class TemporalReprojection
     private Vector3 lastCameraPosition;
 
     private int pixelsAmount;
+    public int PixelsAmount => pixelsAmount;
 
     private int counter = 0;
     
     private readonly int[][] dither = new int[][] {new [] {0}, new []{0, 2, 3, 1}, new [] {0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5}};
 
-    public TemporalReprojection(ComputeShader reprojectComputeShader, VolumetricParams volumetricParams, RTHandle volumetricTarget)
+    public TemporalReprojection(ComputeShader reprojectComputeShader, ComputeShader rendererCompute, VolumetricParams volumetricParams, RTHandle volumetricTarget)
     {
         this.reprojectCompute = Object.Instantiate(reprojectComputeShader);
         this.volumetricParams = volumetricParams;
@@ -38,7 +39,7 @@ public class TemporalReprojection
         );
         
         volumetricTargetRead = RTHandles.Alloc(
-            Vector2.one / Mathf.Pow(2, volumetricParams.downsample), TextureXR.slices, dimension: TextureXR.dimension,
+            Vector2.one, TextureXR.slices, dimension: TextureXR.dimension,
             colorFormat: GraphicsFormat.R16G16B16A16_SFloat,
             useDynamicScale: true, name: "Volumetrics Target", enableRandomWrite:true
         );
@@ -46,6 +47,10 @@ public class TemporalReprojection
         reprojectCompute.SetTexture(0, "_ReprojectionPositions", reprojectionTarget);
         reprojectCompute.SetTexture(0, "_Read", volumetricTargetRead);
         reprojectCompute.SetTexture(0, "_Result", volumetricTarget);
+        
+        rendererCompute.SetTexture(0, "_ReprojectionPositions", reprojectionTarget);
+        
+        volumetricParams.SetVariables(reprojectCompute);
     }
 
     public Vector4 GetPixelOffset()
@@ -83,6 +88,7 @@ public class TemporalReprojection
     public void Cleanup()
     {
         reprojectionTarget.Release();
-        Object.Destroy(reprojectCompute);
+        volumetricTargetRead.Release();
+        CoreUtils.Destroy(reprojectCompute);
     }
 }

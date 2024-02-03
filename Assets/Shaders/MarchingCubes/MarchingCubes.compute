@@ -4,7 +4,7 @@
 #pragma debug
 
 #include "MarchingTable.hlsl"
-#include "../VolumetricCommon.hlsl"
+#include "Assets/Shaders/VolumetricCommon.hlsl"
 
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
