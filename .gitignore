@@ -70,3 +70,166 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+Assets/Textures/0.55mult.meta
+Assets/Textures/0.55mult/vlow_coverage_tapered_HD.asset
+Assets/Textures/0.55mult/vlow_coverage_tapered_HD.asset.meta
+Assets/Textures/0.55mult/vlow_coverage_tapered_SD.asset
+Assets/Textures/0.55mult/vlow_coverage_tapered_SD.asset.meta
+Assets/Textures/0.55mult/vlow_coverage_tapered_UHD.asset
+Assets/Textures/0.55mult/vlow_coverage_tapered_UHD.asset.meta
+Assets/Textures/0.625mult.meta
+Assets/Textures/0.625mult/med_coverage_tapered_HD.asset
+Assets/Textures/0.625mult/med_coverage_tapered_HD.asset.meta
+Assets/Textures/0.625mult/med_coverage_tapered_SD.asset
+Assets/Textures/0.625mult/med_coverage_tapered_SD.asset.meta
+Assets/Textures/0.625mult/med_coverage_tapered_UHD.asset
+Assets/Textures/0.625mult/med_coverage_tapered_UHD.asset.meta
+Assets/Textures/0.65mult.meta
+Assets/Textures/0.65mult/low_coverage_tapered_HD.asset
+Assets/Textures/0.65mult/low_coverage_tapered_HD.asset.meta
+Assets/Textures/0.65mult/low_coverage_tapered_SD.asset
+Assets/Textures/0.65mult/low_coverage_tapered_SD.asset.meta
+Assets/Textures/0.65mult/low_coverage_tapered_UHD.asset
+Assets/Textures/0.65mult/low_coverage_tapered_UHD.asset.meta
+Assets/Textures/0.70mult.meta
+Assets/Textures/0.70mult/high_coverage_tapered_HD.asset
+Assets/Textures/0.70mult/high_coverage_tapered_HD.asset.meta
+Assets/Textures/0.70mult/high_coverage_tapered_SD.asset
+Assets/Textures/0.70mult/high_coverage_tapered_SD.asset.meta
+Assets/Textures/0.70mult/high_coverage_tapered_UHD.asset
+Assets/Textures/0.70mult/high_coverage_tapered_UHD.asset.meta
+Assets/Textures/clouds.asset
+Assets/Textures/clouds.asset.meta
+Assets/Textures/clouds_baked 1.asset
+Assets/Textures/clouds_baked 1.asset.meta
+Assets/Textures/clouds_baked 2.asset
+Assets/Textures/clouds_baked 2.asset.meta
+Assets/Textures/clouds_baked 3.asset
+Assets/Textures/clouds_baked 3.asset.meta
+Assets/Textures/clouds_baked.asset
+Assets/Textures/clouds_baked.asset.meta
+Assets/Textures/clouds_comb.asset
+Assets/Textures/clouds_comb.asset.meta
+Assets/Textures/clouds_high_coverage.asset
+Assets/Textures/clouds_high_coverage.asset.meta
+Assets/Textures/clouds_sdf.asset
+Assets/Textures/clouds_sdf.asset.meta
+Assets/Textures/Legacy.meta
+Assets/Textures/Legacy/clouds.asset
+Assets/Textures/Legacy/clouds.asset.meta
+Assets/Textures/Legacy/clouds_baked.asset
+Assets/Textures/Legacy/clouds_baked.asset.meta
+Assets/Textures/Legacy/clouds_comb.asset
+Assets/Textures/Legacy/clouds_comb.asset.meta
+Assets/Textures/RT.renderTexture
+Assets/Textures/RT.renderTexture.meta
+Assets/Textures/clouds.asset
+Assets/Textures/clouds.asset.meta
+Assets/Textures/clouds_baked 1.asset
+Assets/Textures/clouds_baked 1.asset.meta
+Assets/Textures/clouds_baked 2.asset
+Assets/Textures/clouds_baked 2.asset.meta
+Assets/Textures/clouds_baked 3.asset
+Assets/Textures/clouds_baked 3.asset.meta
+Assets/Textures/clouds_baked.asset
+Assets/Textures/clouds_baked.asset.meta
+Assets/Textures/clouds_comb.asset
+Assets/Textures/clouds_comb.asset.meta
+Assets/Textures/clouds_high_coverage.asset
+Assets/Textures/clouds_high_coverage.asset.meta
+Assets/Textures/clouds_sdf.asset
+Assets/Textures/clouds_sdf.asset.meta
+Assets/Textures/clouds.asset
+Assets/Textures/clouds.asset.meta
+Assets/Textures/clouds_baked 1.asset
+Assets/Textures/clouds_baked 1.asset.meta
+Assets/Textures/clouds_baked 2.asset
+Assets/Textures/clouds_baked 2.asset.meta
+Assets/Textures/clouds_baked 3.asset
+Assets/Textures/clouds_baked 3.asset.meta
+Assets/Textures/clouds_baked.asset
+Assets/Textures/clouds_baked.asset.meta
+Assets/Textures/clouds_comb.asset
+Assets/Textures/clouds_comb.asset.meta
+Assets/Textures/clouds_high_coverage.asset
+Assets/Textures/clouds_high_coverage.asset.meta
+Assets/Textures/clouds_sdf.asset
+Assets/Textures/clouds_sdf.asset.meta
+Assets/Textures/clouds.asset
+Assets/Textures/clouds.asset.meta
+Assets/Textures/clouds_baked 1.asset
+Assets/Textures/clouds_baked 1.asset.meta
+Assets/Textures/clouds_baked 2.asset
+Assets/Textures/clouds_baked 2.asset.meta
+Assets/Textures/clouds_baked 3.asset
+Assets/Textures/clouds_baked 3.asset.meta
+Assets/Textures/clouds_baked.asset
+Assets/Textures/clouds_baked.asset.meta
+Assets/Textures/clouds_comb.asset
+Assets/Textures/clouds_comb.asset.meta
+Assets/Textures/clouds_high_coverage.asset
+Assets/Textures/clouds_high_coverage.asset.meta
+Assets/Textures/clouds_sdf.asset
+Assets/Textures/clouds_sdf.asset.meta
+Assets/Textures/high.meta
+Assets/Textures/high/high_coverage_tapered_HD.asset
+Assets/Textures/high/high_coverage_tapered_HD.asset.meta
+Assets/Textures/high/high_coverage_tapered_HD_c.asset
+Assets/Textures/high/high_coverage_tapered_HD_c.asset.meta
+Assets/Textures/high/high_coverage_tapered_SD.asset
+Assets/Textures/high/high_coverage_tapered_SD.asset.meta
+Assets/Textures/high/high_coverage_tapered_SD_c.asset
+Assets/Textures/high/high_coverage_tapered_SD_c.asset.meta
+Assets/Textures/high/high_coverage_tapered_UHD.asset
+Assets/Textures/high/high_coverage_tapered_UHD.asset.meta
+Assets/Textures/high/high_coverage_tapered_UHD_c.asset
+Assets/Textures/high/high_coverage_tapered_UHD_c.asset.meta
+Assets/Textures/low.meta
+Assets/Textures/low/vlow_coverage_tapered_HD.asset
+Assets/Textures/low/vlow_coverage_tapered_HD.asset.meta
+Assets/Textures/low/vlow_coverage_tapered_HD_c.asset
+Assets/Textures/low/vlow_coverage_tapered_HD_c.asset.meta
+Assets/Textures/low/vlow_coverage_tapered_SD.asset
+Assets/Textures/low/vlow_coverage_tapered_SD.asset.meta
+Assets/Textures/low/vlow_coverage_tapered_SD_c.asset
+Assets/Textures/low/vlow_coverage_tapered_SD_c.asset.meta
+Assets/Textures/low/vlow_coverage_tapered_UHD.asset
+Assets/Textures/low/vlow_coverage_tapered_UHD.asset.meta
+Assets/Textures/low/vlow_coverage_tapered_UHD_c.asset
+Assets/Textures/low/vlow_coverage_tapered_UHD_c.asset.meta
+Assets/Textures/mid.meta
+Assets/Textures/mid/med_coverage_tapered_HD.asset
+Assets/Textures/mid/med_coverage_tapered_HD.asset.meta
+Assets/Textures/mid/med_coverage_tapered_HD_c.asset
+Assets/Textures/mid/med_coverage_tapered_HD_c.asset.meta
+Assets/Textures/mid/med_coverage_tapered_SD.asset
+Assets/Textures/mid/med_coverage_tapered_SD.asset.meta
+Assets/Textures/mid/med_coverage_tapered_SD_c.asset
+Assets/Textures/mid/med_coverage_tapered_SD_c.asset.meta
+Assets/Textures/mid/med_coverage_tapered_UHD.asset
+Assets/Textures/mid/med_coverage_tapered_UHD.asset.meta
+Assets/Textures/mid/med_coverage_tapered_UHD_c.asset
+Assets/Textures/mid/med_coverage_tapered_UHD_c.asset.meta
+Assets/Textures/nan.meta
+Assets/Textures/nan/low_coverage_tapered_HD.asset
+Assets/Textures/nan/low_coverage_tapered_HD.asset.meta
+Assets/Textures/nan/low_coverage_tapered_SD.asset
+Assets/Textures/nan/low_coverage_tapered_SD.asset.meta
+Assets/Textures/nan/low_coverage_tapered_UHD.asset
+Assets/Textures/nan/low_coverage_tapered_UHD.asset.meta
+Assets/Textures/clouds.asset
+Assets/Textures/clouds.asset.meta
+Assets/Textures/clouds_baked 1.asset
+Assets/Textures/clouds_baked 1.asset.meta
+Assets/Textures/clouds_baked 2.asset
+Assets/Textures/clouds_baked 2.asset.meta
+Assets/Textures/clouds_baked 3.asset
+Assets/Textures/clouds_baked 3.asset.meta
+Assets/Textures/clouds_baked.asset
+Assets/Textures/clouds_baked.asset.meta
+Assets/Textures/clouds_comb.asset
+Assets/Textures/clouds_comb.asset.meta
+Assets/Textures/clouds_high_coverage.asset
+Assets/Textures/clouds_high_coverage.asset.meta
+Assets/Textures/clouds_sdf.asset
+Assets/Textures/clouds_sdf.asset.meta

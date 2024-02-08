@@ -11,12 +11,14 @@ public class TextureGenerator : MonoBehaviour
 {
     [SerializeField] private ComputeShader textureCompute;
     [SerializeField, ReadOnly] private RenderTexture output;
-    [SerializeField, Header("Parameters")] private int width = 128;
+    [SerializeField, Header("Parameters")] private int width = 512;
+    [SerializeField] private int height = 128;
     [SerializeField] private Vector3 cellsPerWidth = Vector3.one;
     [Space] [SerializeField] private int octaves = 4;
     [SerializeField] private float persistance = 0.75f;
     [SerializeField] private float lacunarity = 0.5f;
     [SerializeField] private float mult = 0.4f;
+    [SerializeField] private bool compress = false;
 
     [Space] [SerializeField] private bool run;
     [SerializeField] private bool runAndSave;
@@ -36,6 +38,10 @@ public class TextureGenerator : MonoBehaviour
         if (runAndSave)
         {
             runAndSave = false;
+            if (output != null)
+            {
+                output.Release();
+            }
             var tex = GenerateTexture();
             SaveRT3DToTexture3DAsset(tex, name);
             tex.Release();
@@ -64,14 +70,14 @@ public class TextureGenerator : MonoBehaviour
 
     private RenderTexture GenerateTexture()
     {
-        RenderTexture tex = new RenderTexture(width, width, 0, GraphicsFormat.R8_UNorm);
+        RenderTexture tex = new RenderTexture(width, height, 0, GraphicsFormat.R8_UNorm);
         tex.dimension = TextureDimension.Tex3D;
         tex.volumeDepth = width;
         tex.enableRandomWrite = true;
         tex.Create();
         
         
-        RenderTexture texa = new RenderTexture(width, width, 0, GraphicsFormat.R32_SFloat);
+        RenderTexture texa = new RenderTexture(width, height, 0, GraphicsFormat.R32_SFloat);
         texa.dimension = TextureDimension.Tex3D;
         texa.volumeDepth = width;
         texa.enableRandomWrite = true;
@@ -89,7 +95,7 @@ public class TextureGenerator : MonoBehaviour
             textureCompute.SetVector("_CellsPerWidth", currentCPW);
             textureCompute.SetTexture(0, "_Input", texa);
             textureCompute.SetTexture(0, "_Output", texb);
-            textureCompute.Dispatch(0, width / 4, width / 4, width / 4);
+            textureCompute.Dispatch(0, width / 4, height / 4, width / 4);
             amplitude *= persistance;
             currentCPW = (currentCPW / lacunarity);
             currentCPW = new Vector3(Mathf.Floor(currentCPW.x), Mathf.Floor(currentCPW.y), Mathf.Floor(currentCPW.z));
@@ -101,7 +107,7 @@ public class TextureGenerator : MonoBehaviour
         textureCompute.SetFloat("_Mult", mult);
         textureCompute.SetTexture(1, "_Input", texa);
         textureCompute.SetTexture(1, "_Output", tex);
-        textureCompute.Dispatch(1, width / 4, width / 4, width / 4);
+        textureCompute.Dispatch(1, width / 4, height / 4, width / 4);
 
         texa.Release();
         texb.Release();

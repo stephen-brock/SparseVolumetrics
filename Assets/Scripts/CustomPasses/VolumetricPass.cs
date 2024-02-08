@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
@@ -36,6 +37,8 @@ class VolumetricPass : RaymarcherPass
 
     private TemporalReprojection temporalReprojection;
 
+    private Dictionary<string, float> customParameters = new Dictionary<string, float>();
+
     protected override void Setup(ScriptableRenderContext renderContext, CommandBuffer cmd)
     {
         volumetricTarget = RTHandles.Alloc(
@@ -48,6 +51,12 @@ class VolumetricPass : RaymarcherPass
         // combineMaterial = CoreUtils.CreateEngineMaterial(volumetricCombine);
         combineCompute = Object.Instantiate(volumetricCombine);
         rendererCompute = Object.Instantiate(volumetricRendererCompute);
+        rendererCompute.SetFloat("_StepDistance", 100);
+
+        foreach (var customParameter in customParameters)
+        {
+            rendererCompute.SetFloat(customParameter.Key, customParameter.Value);
+        }
         
         
         if (reprojection)
@@ -79,7 +88,7 @@ class VolumetricPass : RaymarcherPass
         rendererCompute.SetVector("_SunDirection", -sun.transform.forward);
         rendererCompute.SetVector("_SunColour", sun.color * sunIntensity);
         rendererCompute.SetTexture(0, "_Result", volumetricTarget);
-        rendererCompute.SetTexture(0, "_SDFMap", sdfMap);
+        // rendererCompute.SetTexture(0, "_SDFMap", sdfMap);
         
         volumetricParams.SetVariables(rendererCompute);
     }
@@ -152,5 +161,13 @@ class VolumetricPass : RaymarcherPass
     {
         volumetricParams = volumeParams;
         UpdateVariables();
+    }
+
+    public override void SetParameter(string id, float value)
+    {
+        if (!customParameters.TryAdd(id, value))
+        {
+            customParameters[id] = value;
+        }
     }
 }

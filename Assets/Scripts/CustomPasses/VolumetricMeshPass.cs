@@ -207,4 +207,9 @@ class VolumetricMeshPass : RaymarcherPass
         volumetricParams = volumeParams;
         UpdateVariables();
     }
+
+    public override void SetParameter(string id, float value)
+    {
+        meshMaterial.SetFloat(id, value);
+    }
 }

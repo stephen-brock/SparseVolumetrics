@@ -120,7 +120,7 @@ public class CloudTesting : MonoBehaviour
         string paramsId = "";
         if (index >= 0)
         {
-            paramsId = volumetricParameters[index].id;
+            paramsId = volumetricParameters[index].name;
         }
         else
         {

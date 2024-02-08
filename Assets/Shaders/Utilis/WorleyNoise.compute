@@ -66,5 +66,9 @@ void FinalPass (uint3 id : SV_DispatchThreadID)
     float width, height, depth;
     _Output.GetDimensions(width, height, depth);
     float3 uvw = id / width;
-    _Output[id.xyz] = max(0, 2.0f * _Input[id] * _Mult - 1.35f);
+    float density = _Input[id] * _Mult;
+    float h = float(id.y) / height;
+    density *= pow(1.0f - (h), 0.2f);
+    density *= pow(h, 0.15f);
+    _Output[id.xyz] = max(0, 2.0f * density - 1.35f);
 }

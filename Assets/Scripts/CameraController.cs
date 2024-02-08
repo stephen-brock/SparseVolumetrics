@@ -5,6 +5,8 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     [SerializeField] private float sensitivity = 1.0f;
+    [SerializeField] private float sprint = 500;
+    [SerializeField] private float walk = 50;
 
     private float x, y;
 
@@ -14,5 +16,10 @@ public class CameraController : MonoBehaviour
         x = Mathf.Clamp(x, -89, 90);
         y += Input.GetAxis("Mouse X") * Time.deltaTime * sensitivity;
         transform.localEulerAngles = new Vector3(x, y, 0);
+
+        float speed = Input.GetKey(KeyCode.LeftShift) ? sprint : walk;
+        transform.position +=
+            (transform.forward * Input.GetAxis("Vertical") + transform.right * Input.GetAxis("Horizontal")) *
+            (Time.deltaTime * speed);
     }
 }

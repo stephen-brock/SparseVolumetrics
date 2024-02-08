@@ -7,9 +7,10 @@ using UnityEngine.Experimental.Rendering.RenderGraphModule;
 [CreateAssetMenu()]
 public class VolumetricParams : ScriptableObject
 {
-    public string id;
     [Header("Visual")]
     public Color ambientColour = Color.white;
+
+    public float ambientMult = 0.001f;
     public Color totalAmbientColour = Color.white;
     [Range(-1, 1)] public float phase = 0.8f;
     [Range(-1, 1)] public float phase2 = 0.4f;
@@ -25,8 +26,8 @@ public class VolumetricParams : ScriptableObject
     public Texture3D densityMap;
     public Texture3D detailDensityMap;
     public float density = 1;
-    public float lightDensity = 1;
-    public Vector3 scale;
+    // public float lightDensity = 1;
+    // public Vector3 scale;
     public float detailAmount = -0.25f;
     public float detailScale = 0.05f;
 
@@ -35,9 +36,9 @@ public class VolumetricParams : ScriptableObject
         rendererCompute.SetTexture(0, "_DensityMap", densityMap);
         rendererCompute.SetTexture(0, "_DetailDensityMap", detailDensityMap);
         rendererCompute.SetFloat("_Density", density);
-        rendererCompute.SetFloat("_LightDensity", lightDensity);
-        rendererCompute.SetVector("_Scale", scale);
-        rendererCompute.SetVector("_AmbientColour", ambientColour);
+        // rendererCompute.SetFloat("_LightDensity", lightDensity);
+        // rendererCompute.SetVector("_Scale", scale);
+        rendererCompute.SetVector("_AmbientColour", ambientColour * ambientMult);
         rendererCompute.SetVector("_TotalAmbientColour", totalAmbientColour);
         rendererCompute.SetFloat("_DetailScale", detailScale);
         rendererCompute.SetFloat("_DetailAmount", detailAmount);
@@ -52,9 +53,9 @@ public class VolumetricParams : ScriptableObject
     public void SetVariables(Material meshMaterial)
     {
         meshMaterial.SetFloat("_Density", density);
-        meshMaterial.SetFloat("_LightDensity", lightDensity);
-        meshMaterial.SetVector("_Scale", scale);
-        meshMaterial.SetVector("_AmbientColour", ambientColour);
+        // meshMaterial.SetFloat("_LightDensity", lightDensity);
+        // meshMaterial.SetVector("_Scale", scale);
+        meshMaterial.SetVector("_AmbientColour", ambientColour * ambientMult);
         meshMaterial.SetVector("_TotalAmbientColour", totalAmbientColour);
         meshMaterial.SetFloat("_DetailScale", detailScale);
         meshMaterial.SetFloat("_DetailAmount", detailAmount);
@@ -68,5 +69,7 @@ public class VolumetricParams : ScriptableObject
         meshMaterial.SetTexture("_DetailDensityMap", detailDensityMap);
         meshMaterial.SetFloat("_Downsample", Mathf.Pow(2, downsample));
     }
+    
+    
     
 }

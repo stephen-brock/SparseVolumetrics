@@ -5,10 +5,13 @@
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl" // for TEXTURE2D_X() and RW_TEXTURE2D_X
 
 
-static const float STEP_DISTANCE = 10;
+static const float _StepDistance = 19;
+// static const float LIGHT_STEP_DISTANCE = 19;
 static const uint LIGHT_SAMPLES = 5;
 
 float3 _CamFrustrum[4];
+
+// float _StepDistance;
 
 float _MinHeight;
 float _MaxHeight;
@@ -19,7 +22,7 @@ float _Width;
 
 Texture3D<float> _DensityMap;
 // Texture3D<float2> _DensityMap;
-Texture3D<float> _DetailDensityMap;
+// Texture3D<float> _DetailDensityMap;
 
 float _Downscale;
 
@@ -93,36 +96,90 @@ float2 Intersection(float3 rayOrigin, float3 invRaydir) {
 
 float SampleMajorDensity(float3 pos)
 {
-    return _DensityMap.SampleLevel(s_linear_repeat_sampler, pos / float3(_Width, _MaxHeight - _MinHeight, _Width), 0);
+    return _DensityMap.SampleLevel(s_linear_repeat_sampler, pos / float3(_Width * 2.0f, _MaxHeight - _MinHeight, _Width * 2.0f), 0);
 }
 
 float SampleDensity(float3 pos, float density)
 {
-    return max(0, density + _DetailDensityMap.SampleLevel(s_linear_repeat_sampler, pos * _DetailScale, 0) * _DetailAmount);
+    return max(0, density);
+    // return max(0, density + _DetailDensityMap.SampleLevel(s_linear_repeat_sampler, pos * _DetailScale, 0) * _DetailAmount);
 }
+
+float SampleFullDensity(float3 pos)
+{
+    float mult = pos.y > _MaxHeight ? 0 : 1;
+    return SampleDensity(pos, SampleMajorDensity(pos)) * mult;
+}
+// float3 LightRaymarch(float3 pos)
+// {
+//     float2 tParams = Intersection(pos, 1.0f / _SunDirection);
+//     if (tParams.y < tParams.x)
+//     {
+//         return 0;
+//     }
+//     float stepDistance = tParams.y / (LIGHT_SAMPLES + 1);
+//     float3 step = _SunDirection * stepDistance;
+//
+//     float totalDensity = SampleDensity(pos, _DensityMap.SampleLevel(s_linear_repeat_sampler, pos * _Scale, 0).x);
+//     pos += step;
+//     totalDensity = (SampleDensity(pos, _DensityMap.SampleLevel(s_linear_repeat_sampler, pos * _Scale, 0).x) + totalDensity) / 2;
+//     
+//     [unroll]
+//     for (uint i = 1; i < LIGHT_SAMPLES; i++)
+//     {
+//         pos += step;
+//         totalDensity += SampleDensity(pos, _DensityMap.SampleLevel(s_linear_repeat_sampler, pos * _Scale, 0).x);
+//     }
+//     
+//     return exp(-totalDensity * stepDistance * _Density) * _SunColour;
+// }
 
 float3 LightRaymarch(float3 pos)
 {
-    float2 tParams = Intersection(pos, 1.0f / _SunDirection);
-    if (tParams.y < tParams.x)
-    {
-        return 0;
-    }
-    float stepDistance = tParams.y / (LIGHT_SAMPLES + 1);
+    float stepDistance = _StepDistance;
     float3 step = _SunDirection * stepDistance;
 
-    float totalDensity = SampleDensity(pos, _DensityMap.SampleLevel(s_linear_repeat_sampler, pos * _Scale, 0).x);
+    float totalDensity = SampleFullDensity(pos) * stepDistance;
     pos += step;
-    totalDensity = (SampleDensity(pos, _DensityMap.SampleLevel(s_linear_repeat_sampler, pos * _Scale, 0).x) + totalDensity) / 2;
+    stepDistance *= 2;
+    step *= 2;
+    totalDensity = (SampleFullDensity(pos) * stepDistance + totalDensity) / 2;
     
     [unroll]
     for (uint i = 1; i < LIGHT_SAMPLES; i++)
     {
+        stepDistance *= 2;
+        step *= 2;
         pos += step;
-        totalDensity += SampleDensity(pos, _DensityMap.SampleLevel(s_linear_repeat_sampler, pos * _Scale, 0).x);
+        totalDensity += SampleFullDensity(pos) * stepDistance;
     }
     
-    return exp(-totalDensity * stepDistance * _Density) * _SunColour;
+    return exp(-totalDensity * _Density) * _SunColour;
+}
+
+float3 ConstantLightRaymarch(float3 pos)
+{
+    float2 tParams = Intersection(pos, 1.0f / _SunDirection);
+
+    float distance = 0;
+    float density = 0;
+
+    [loop]
+    while (distance < tParams.y)
+    {
+        distance += _StepDistance;
+        pos += _SunDirection * _StepDistance;
+        density += SampleFullDensity(pos);
+
+        if (exp(-density * _Density * _StepDistance) < 0.01f)
+        {
+            density = 100000;
+            break;
+        }
+    }
+
+    return exp(-density * _StepDistance * _Density) * _SunColour;
+    
 }
 
 // float SDFRaymarch(float3 startPos, float3 direction, float totalDistance)
@@ -163,14 +220,13 @@ float4 Raymarch(float3 startPos, float3 direction, float distance, float totalDi
     [loop]
     while (t < totalDistance)
     {
-        t += STEP_DISTANCE;
-        pos += direction * STEP_DISTANCE;
-        float smp = SampleMajorDensity(pos);
-        float density = SampleDensity(pos, smp.x) * STEP_DISTANCE * _Density;
+        t += _StepDistance;
+        pos += direction * _StepDistance;
+        float density = SampleFullDensity(pos) * _StepDistance * _Density;
 
         if (density > 0)
         {
-            lightEnergy += (LightRaymarch(pos)) * density * transmittance + _AmbientColour * transmittance;
+            lightEnergy += (LightRaymarch(pos)) * density * transmittance;
             transmittance *= exp(-density);
 
             // if (transmittance > 0.4f && reproj.y < 0.5f)
@@ -192,7 +248,39 @@ float4 Raymarch(float3 startPos, float3 direction, float distance, float totalDi
         //     pos += direction * extend; 
         // }
     }
-    return float4(lightEnergy * phase + _TotalAmbientColour, 1.0f - transmittance);
+    return float4(lightEnergy * phase, 1.0f - transmittance);
+}
+
+float4 ConstantRaymarch(float3 startPos, float3 direction, float distance, float totalDistance)
+{
+    float3 pos = startPos;
+    float transmittance = 1;
+
+    float3 lightEnergy = 0;
+    float phase = phaseFunction(dot(direction, _SunDirection));
+
+    float t = 0;
+
+    [loop]
+    while (t < totalDistance)
+    {
+        t += _StepDistance;
+        pos += direction * _StepDistance;
+        float density = SampleFullDensity(pos) * _StepDistance * _Density;
+
+        if (density > 0)
+        {
+            lightEnergy += (ConstantLightRaymarch(pos)) * density * transmittance;
+            transmittance *= exp(-density);
+
+            if (transmittance < 0.01f)
+            {
+                transmittance = 0;
+                break;
+            }
+        }
+    }
+    return float4(lightEnergy * phase, 1.0f - transmittance);
 }
 
 

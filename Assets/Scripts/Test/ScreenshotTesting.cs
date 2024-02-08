@@ -11,19 +11,29 @@ public class ScreenshotTesting : MonoBehaviour
     [SerializeField] private string id = "test_";
 
     [SerializeField] private int frameDelay = 200;
+    [SerializeField] private int wait = 50;
 
     private IEnumerator Start()
     {
         yield return null;
         volume.enabled = false;
-        for (int i = 0; i < frameDelay; i++)
+        yield return new WaitForSeconds(5);
+        for (int i = 0; i < wait; i++)
         {
             yield return null;
         }
         
-        Debug.Log("None screenshot taken");
-        ScreenCapture.CaptureScreenshot(Path.Combine(Application.persistentDataPath, $"{id}_none.png"));
+
+        double time = Time.unscaledTimeAsDouble;
         for (int i = 0; i < frameDelay; i++)
+        {
+            yield return null;
+        }
+        time = Time.unscaledTimeAsDouble - time;
+        Debug.Log($"None screenshot taken, average frametime {1000.0 * time / frameDelay}");
+            
+        ScreenCapture.CaptureScreenshot(Path.Combine(Application.persistentDataPath, $"{id}_none.png"));
+        for (int i = 0; i < wait; i++)
         {
             yield return null;
         }
@@ -34,16 +44,36 @@ public class ScreenshotTesting : MonoBehaviour
         {
             RaymarcherPass pass = (RaymarcherPass)volume.customPasses[0];
             pass.SetVolumetricParams(volumetricParameters[i]);
+            volume.enabled = false;
+            yield return null;
+            volume.enabled = true;
+            for (int j = 0; j < wait; j++)
+            {
+                yield return null;
+            }
+            time = Time.unscaledTimeAsDouble;
             for (int j = 0; j < frameDelay; j++)
             {
                 yield return null;
             }
-            Debug.Log($"{volumetricParameters[i].id} screenshot taken");
+
+            time = Time.unscaledTimeAsDouble - time;
+            Debug.Log($"{volumetricParameters[i].name} screenshot taken, average frametime {1000.0 * time / frameDelay}");
             
-            ScreenCapture.CaptureScreenshot(Path.Combine(Application.persistentDataPath, $"{id}_{volumetricParameters[i].id}.png"));
+            ScreenCapture.CaptureScreenshot(Path.Combine(Application.persistentDataPath, $"{id}_{volumetricParameters[i].name}.png"));
+            for (int j = 0; j < wait; j++)
+            {
+                yield return null;
+            }
         }
 
         Debug.Log("Done");
+        for (int j = 0; j < frameDelay; j++)
+        {
+            yield return null;
+        }
+
+        Application.Quit();
 
     }
 }
