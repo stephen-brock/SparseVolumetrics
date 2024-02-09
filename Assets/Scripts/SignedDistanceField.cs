@@ -21,7 +21,7 @@ public class SignedDistanceField : MonoBehaviour
 
     RenderTexture GenerateTexture()
     {
-        RenderTexture temp1 = new RenderTexture(input.width, input.height, 0, GraphicsFormat.R8_UNorm);
+        RenderTexture temp1 = new RenderTexture(input.width, input.height, 0, GraphicsFormat.R32_SFloat);
         temp1.dimension = TextureDimension.Tex3D;
         temp1.volumeDepth = input.depth;
         temp1.enableRandomWrite = true;
@@ -31,27 +31,53 @@ public class SignedDistanceField : MonoBehaviour
         temp2.Create();
 
         shader.SetFloat("_Decay", decay);
+        
+        shader.SetTexture(3, "_Input", input);
+        shader.SetTexture(3, "_Result", temp1);
+        shader.Dispatch(3, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
 
-        for (int i = 0; i < iterations; i++)
-        {
-            shader.SetTexture(1, "_Input", input);
-            shader.SetTexture(1, "_Result", temp1);
-            shader.Dispatch(1, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
-                
-            shader.SetTexture(0, "_Input", temp1);
-            shader.SetTexture(0, "_Result", temp2);
-            shader.Dispatch(0, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
 
-            var tmp = temp2;
-            temp2 = temp1;
-            temp1 = tmp;
-        }
-        shader.SetTexture(1, "_Input", input);
-        shader.SetTexture(1, "_Result", temp1);
-        shader.Dispatch(1, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
+        // for (int i = 0; i < iterations; i++)
+        // {
+        //     shader.SetTexture(1, "_Input", input);
+        //     shader.SetTexture(1, "_Result", temp1);
+        //     shader.Dispatch(1, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
+        //         
+        //     shader.SetTexture(0, "_Input", temp1);
+        //     shader.SetTexture(0, "_Result", temp2);
+        //     shader.Dispatch(0, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
+        //
+        //     var tmp = temp2;
+        //     temp2 = temp1;
+        //     temp1 = tmp;
+        // }
+        // shader.SetTexture(1, "_Input", input);
+        // shader.SetTexture(1, "_Result", temp1);
+        // shader.Dispatch(1, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
             
         temp2.Release();
+        
+        print("Generated");
         return temp1;
+    }
+
+    void GetMaximum(RenderTexture rt3D)
+    {
+        int width = rt3D.width, height = rt3D.height, depth = rt3D.volumeDepth;
+        var a = new NativeArray<float>(width * height * depth, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); //change if format is not 8 bits (i was using R8_UNorm) (create a struct with 4 bytes etc)
+        AsyncGPUReadback.RequestIntoNativeArray(ref a, rt3D, 0, (_) =>
+        {
+            float max = 0;
+            for (int i = 0; i < a.Length; i++)
+            {
+                max = Mathf.Max(a[i], max);
+            }
+
+            a.Dispose();
+            print(1.0f / max);
+
+            Combine(rt3D, 1.0f / max);
+        });
     }
     
     //https://forum.unity.com/threads/rendertexture-3d-to-texture3d.928362/
@@ -122,17 +148,23 @@ public class SignedDistanceField : MonoBehaviour
         {
             runAndSaveCombined = false;
             var tex = GenerateTexture();
-            var comb = new RenderTexture(tex.descriptor);
-            comb.graphicsFormat = GraphicsFormat.R8G8_UNorm;
-            comb.enableRandomWrite = true;
-            comb.Create();
-            shader.SetTexture(2, "_Input", input);
-            shader.SetTexture(2, "_SDF", tex);
-            shader.SetTexture(2, "_Combined", comb);
-            shader.Dispatch(2, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
-            SaveRT3DToTexture3DAssetRG(comb, name);
-            tex.Release();
-            comb.Release();
+            GetMaximum(tex);
         }
+    }
+
+    private void Combine(RenderTexture tex, float mult)
+    {
+        var comb = new RenderTexture(tex.descriptor);
+        comb.graphicsFormat = GraphicsFormat.R8G8_UNorm;
+        comb.enableRandomWrite = true;
+        comb.Create();
+        shader.SetTexture(2, "_Input", input);
+        shader.SetTexture(2, "_SDF", tex);
+        shader.SetTexture(2, "_Combined", comb);
+        shader.SetFloat("_Mult", mult);
+        shader.Dispatch(2, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
+        SaveRT3DToTexture3DAssetRG(comb, name);
+        tex.Release();
+        comb.Release();
     }
 }

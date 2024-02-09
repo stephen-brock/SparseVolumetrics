@@ -5,11 +5,17 @@
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl" // for TEXTURE2D_X() and RW_TEXTURE2D_X
 
 
-static const float _StepDistance = 19;
+static const float STEP_DISTANCE = 38;
 // static const float LIGHT_STEP_DISTANCE = 19;
-static const uint LIGHT_SAMPLES = 5;
+static const uint LIGHT_SAMPLES = 25;
+
+static const float LIGHT_STEP_MULTIPLIER = 1.18f;
+
+static const float OVER_STEP = 4;
+static const float EMPTY_OVER_STEP = 5;
 
 float3 _CamFrustrum[4];
+
 
 // float _StepDistance;
 
@@ -136,51 +142,47 @@ float SampleFullDensity(float3 pos)
 
 float3 LightRaymarch(float3 pos)
 {
-    float stepDistance = _StepDistance;
-    float3 step = _SunDirection * stepDistance;
-
-    float totalDensity = SampleFullDensity(pos) * stepDistance;
-    pos += step;
-    stepDistance *= 2;
-    step *= 2;
-    totalDensity = (SampleFullDensity(pos) * stepDistance + totalDensity) / 2;
-    
-    [unroll]
-    for (uint i = 1; i < LIGHT_SAMPLES; i++)
-    {
-        stepDistance *= 2;
-        step *= 2;
-        pos += step;
-        totalDensity += SampleFullDensity(pos) * stepDistance;
-    }
-    
-    return exp(-totalDensity * _Density) * _SunColour;
-}
-
-float3 ConstantLightRaymarch(float3 pos)
-{
     float2 tParams = Intersection(pos, 1.0f / _SunDirection);
 
     float distance = 0;
     float density = 0;
+    float stepDistance = STEP_DISTANCE;
 
     [loop]
     while (distance < tParams.y)
     {
-        distance += _StepDistance;
-        pos += _SunDirection * _StepDistance;
-        density += SampleFullDensity(pos);
-
-        if (exp(-density * _Density * _StepDistance) < 0.01f)
-        {
-            density = 100000;
-            break;
-        }
+        stepDistance *= LIGHT_STEP_MULTIPLIER;
+        distance += stepDistance;
+        pos += _SunDirection * stepDistance;
+        density += SampleFullDensity(pos) * stepDistance;
     }
-
-    return exp(-density * _StepDistance * _Density) * _SunColour;
-    
+    return exp(-density * _Density) * _SunColour;
 }
+
+// float3 ConstantLightRaymarch(float3 pos)
+// {
+//     float2 tParams = Intersection(pos, 1.0f / _SunDirection);
+//
+//     float distance = 0;
+//     float density = 0;
+//
+//     [loop]
+//     while (distance < tParams.y)
+//     {
+//         distance += _StepDistance;
+//         pos += _SunDirection * _StepDistance;
+//         density += SampleFullDensity(pos);
+//
+//         if (exp(-density * _Density * _StepDistance) < 0.01f)
+//         {
+//             density = 100000;
+//             break;
+//         }
+//     }
+//
+//     return exp(-density * _StepDistance * _Density) * _SunColour;
+//     
+// }
 
 // float SDFRaymarch(float3 startPos, float3 direction, float totalDistance)
 // {
@@ -206,7 +208,83 @@ float3 ConstantLightRaymarch(float3 pos)
 //     return max(0, t - stepDst);
 // }
 
-float4 Raymarch(float3 startPos, float3 direction, float distance, float totalDistance)
+// float4 Raymarch(float3 startPos, float3 direction, float distance, float totalDistance)
+// {
+//     float3 pos = startPos;
+//     float transmittance = 1;
+//
+//     float3 lightEnergy = 0;
+//     float phase = phaseFunction(dot(direction, _SunDirection));
+//
+//     float t = 0;
+//     // reproj = 0;
+//
+//     [loop]
+//     while (t < totalDistance)
+//     {
+//         t += _StepDistance;
+//         pos += direction * _StepDistance;
+//         float density = SampleFullDensity(pos) * _StepDistance * _Density;
+//
+//         if (density > 0)
+//         {
+//             lightEnergy += (LightRaymarch(pos)) * density * transmittance;
+//             transmittance *= exp(-density);
+//
+//             // if (transmittance > 0.4f && reproj.y < 0.5f)
+//             // {
+//             //     reproj = float2((t + distance) / _ProjectionParams.z, 1);
+//             // }
+//
+//             if (transmittance < 0.01)
+//             {
+//                 transmittance = 0;
+//                 break;
+//             }
+//         }
+//         // float dst = 1.0f - smp.y;
+//         // if (dst > 0)
+//         // {
+//         //     float extend = SDFRaymarch(pos, direction, totalDistance - t);
+//         //     t += extend;
+//         //     pos += direction * extend; 
+//         // }
+//     }
+//     return float4(lightEnergy * phase, 1.0f - transmittance);
+// }
+// float4 ConstantRaymarch(float3 startPos, float3 direction, float distance, float totalDistance)
+// {
+//     float3 pos = startPos;
+//     float transmittance = 1;
+//
+//     float3 lightEnergy = 0;
+//     float phase = phaseFunction(dot(direction, _SunDirection));
+//
+//     float t = 0;
+//
+//     [loop]
+//     while (t < totalDistance)
+//     {
+//         t += _StepDistance;
+//         pos += direction * _StepDistance;
+//         float density = SampleFullDensity(pos) * _StepDistance * _Density;
+//
+//         if (density > 0)
+//         {
+//             //lightEnergy += (ConstantLightRaymarch(pos)) * density * transmittance;
+//             transmittance *= exp(-density);
+//
+//             if (transmittance < 0.01f)
+//             {
+//                 transmittance = 0;
+//                 break;
+//             }
+//         }
+//     }
+//     return float4(lightEnergy * phase, 1.0f - transmittance);
+// }
+
+float4 AdaptiveRaymarch(float3 startPos, float3 direction, float distance, float totalDistance)
 {
     float3 pos = startPos;
     float transmittance = 1;
@@ -217,22 +295,28 @@ float4 Raymarch(float3 startPos, float3 direction, float distance, float totalDi
     float t = 0;
     // reproj = 0;
 
+    float stepDistance = STEP_DISTANCE;
+    float overstep = 1;
+
     [loop]
     while (t < totalDistance)
     {
-        t += _StepDistance;
-        pos += direction * _StepDistance;
-        float density = SampleFullDensity(pos) * _StepDistance * _Density;
+        stepDistance = max(stepDistance, (1.0f - transmittance) * STEP_DISTANCE * OVER_STEP);
+        t += stepDistance;
+        pos += direction * stepDistance;
+        float density = SampleFullDensity(pos) * stepDistance * _Density;
 
         if (density > 0)
         {
+            float m = saturate(overstep);
+            density *= (1.0f - m);
             lightEnergy += (LightRaymarch(pos)) * density * transmittance;
             transmittance *= exp(-density);
-
-            // if (transmittance > 0.4f && reproj.y < 0.5f)
-            // {
-            //     reproj = float2((t + distance) / _ProjectionParams.z, 1);
-            // }
+            
+            t -= stepDistance * m;
+            pos -= direction * stepDistance * m;
+            overstep = -EMPTY_OVER_STEP;
+            stepDistance = STEP_DISTANCE;
 
             if (transmittance < 0.01)
             {
@@ -240,48 +324,15 @@ float4 Raymarch(float3 startPos, float3 direction, float distance, float totalDi
                 break;
             }
         }
-        // float dst = 1.0f - smp.y;
-        // if (dst > 0)
-        // {
-        //     float extend = SDFRaymarch(pos, direction, totalDistance - t);
-        //     t += extend;
-        //     pos += direction * extend; 
-        // }
-    }
-    return float4(lightEnergy * phase, 1.0f - transmittance);
-}
-
-float4 ConstantRaymarch(float3 startPos, float3 direction, float distance, float totalDistance)
-{
-    float3 pos = startPos;
-    float transmittance = 1;
-
-    float3 lightEnergy = 0;
-    float phase = phaseFunction(dot(direction, _SunDirection));
-
-    float t = 0;
-
-    [loop]
-    while (t < totalDistance)
-    {
-        t += _StepDistance;
-        pos += direction * _StepDistance;
-        float density = SampleFullDensity(pos) * _StepDistance * _Density;
-
-        if (density > 0)
+        else
         {
-            lightEnergy += (ConstantLightRaymarch(pos)) * density * transmittance;
-            transmittance *= exp(-density);
-
-            if (transmittance < 0.01f)
-            {
-                transmittance = 0;
-                break;
-            }
+            overstep += 1.0f;
+            stepDistance = lerp(stepDistance, STEP_DISTANCE * EMPTY_OVER_STEP, saturate(overstep));
         }
     }
     return float4(lightEnergy * phase, 1.0f - transmittance);
 }
+
 
 
 #endif

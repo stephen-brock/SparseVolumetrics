@@ -21,7 +21,7 @@ MonoBehaviour:
   maxHeight: 5500
   width: 10000
   bufferDistance: 38.7
-  downsample: 0
+  downsample: 2
   densityMap: {fileID: 11700000, guid: c45304b9487e2de43bf8d22ad160b204, type: 2}
   detailDensityMap: {fileID: 11700000, guid: 3851f2a8a4cfbd74ca9a27aedacbfbba, type: 2}
   density: 0.05

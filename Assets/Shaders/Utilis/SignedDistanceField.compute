@@ -24,19 +24,19 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         {
             for (float k = -1; k <= 1; k++)
             {
-                maxValue = max(maxValue, _Input.SampleLevel(PointRepeatSampler, float3(id + float3(i,j,k)) / float3(width, height, depth), 0));
+                maxValue = max(maxValue, _Decay * _Input.SampleLevel(PointRepeatSampler, float3(id + float3(i,j,k)) / float3(width, height, depth), 0));
             }
         }
     }
 
-    _Result[id] = maxValue * _Decay;
+    _Result[id] = maxValue;
 }
 
 #pragma kernel ApplyThreshold
 
 float SampleDensity(float3 uvw)
 {
-    return max(0, 2.0f * _Input.SampleLevel(PointRepeatSampler, uvw, 0) - 1.25f);
+    return _Input.SampleLevel(PointRepeatSampler, uvw, 0);
 }
 
 [numthreads(4,4,4)]
@@ -53,11 +53,62 @@ void ApplyThreshold (uint3 id : SV_DispatchThreadID)
 Texture3D<float> _SDF;
 RWTexture3D<float2> _Combined;
 
+float _Mult;
+
 [numthreads(4,4,4)]
 void Combine (uint3 id : SV_DispatchThreadID)
 {
     float width, height, depth;
     _Input.GetDimensions(width, height, depth);
     float3 uvw = float3(id) / float3(width, height, depth);
-    _Combined[id] = float2(_Input.SampleLevel(PointRepeatSampler, uvw, 0), _SDF.SampleLevel(PointRepeatSampler, uvw, 0));
+    _Combined[id] = float2(_Input.SampleLevel(PointRepeatSampler, uvw, 0), _SDF.SampleLevel(PointRepeatSampler, uvw, 0) * _Mult);
+}
+
+
+#pragma kernel BruteForce
+[numthreads(4,4,4)]
+void BruteForce (uint3 id : SV_DispatchThreadID)
+{
+    float width, height, depth;
+    _Input.GetDimensions(width, height, depth);
+    float3 d = float3(width, height, depth);
+    float3 uvw = float3(id) / d;
+    float maxValue = _Input.SampleLevel(PointRepeatSampler, uvw, 0);
+    if (maxValue > 0)
+    {
+        _Result[id] = 0;
+        return;
+    }
+
+    float w = 0;
+    [loop]
+    while (maxValue <= 0)
+    {
+        w += 1;
+        float minValue = width * width * height;
+        for (float i = -w; i <= w; i++)
+        {
+            for (float j = -w; j <= w; j++)
+            {
+                float4 pos = float4(i, j, w, -w);
+                maxValue = max(maxValue, _Input.SampleLevel(PointRepeatSampler, uvw + pos.xyz / d, 0));
+                maxValue = max(maxValue, _Input.SampleLevel(PointRepeatSampler, uvw + pos.xyw / d, 0));
+                
+                maxValue = max(maxValue, _Input.SampleLevel(PointRepeatSampler, uvw + pos.xzy / d, 0));
+                maxValue = max(maxValue, _Input.SampleLevel(PointRepeatSampler, uvw + pos.xwy / d, 0));
+                
+                maxValue = max(maxValue, _Input.SampleLevel(PointRepeatSampler, uvw + pos.zxy / d, 0));
+                maxValue = max(maxValue, _Input.SampleLevel(PointRepeatSampler, uvw + pos.wxy / d, 0));
+
+                if (maxValue > 0)
+                {
+                    minValue = min(minValue, dot(pos.xyz, pos.xyz));
+                    maxValue = minValue;
+                }
+            }
+        }
+    }
+
+
+    _Result[id] = sqrt(maxValue) / sqrt(dot(d,d));
 }

@@ -51,7 +51,7 @@ class VolumetricPass : RaymarcherPass
         // combineMaterial = CoreUtils.CreateEngineMaterial(volumetricCombine);
         combineCompute = Object.Instantiate(volumetricCombine);
         rendererCompute = Object.Instantiate(volumetricRendererCompute);
-        rendererCompute.SetFloat("_StepDistance", 100);
+        rendererCompute.SetFloat("_OverStep", 100.0f);
 
         foreach (var customParameter in customParameters)
         {

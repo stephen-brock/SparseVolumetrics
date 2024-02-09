@@ -31,7 +31,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     
     float depthExtended = viewDepth >= _ProjectionParams.z - 1.0f ? 10000000 : viewDepth; 
     tParams.y = min(tParams.y + tParams.x, depthExtended) - tParams.x;
-    float3 startPos = _WorldSpaceCameraPos + viewDirection * (tParams.x + Random(pixel.x / 11.9f + _Time.y * pixel.y / 18.5f) * _StepDistance);
+    float3 startPos = _WorldSpaceCameraPos + viewDirection * (tParams.x + Random(pixel.x / 11.9f + _Time.y * pixel.y / 18.5f) * STEP_DISTANCE);
     // float extend = SDFRaymarch(startPos, viewDirection, tParams.y);
     // startPos += viewDirection * extend;
     // tParams.x += extend;
@@ -46,7 +46,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
 
     // float2 reproj;
-    float4 col = ConstantRaymarch(startPos, viewDirection, tParams.x, tParams.y);
+    float4 col = AdaptiveRaymarch(startPos, viewDirection, tParams.x, tParams.y);
     // float4 col = Raymarch(startPos, viewDirection, tParams.x, tParams.y);
     // #if REPROJECT
     // if (reproj.y > 0.5f)
