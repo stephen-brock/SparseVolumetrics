@@ -24,7 +24,13 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         {
             for (float k = -1; k <= 1; k++)
             {
-                maxValue = max(maxValue, _Decay * _Input.SampleLevel(PointRepeatSampler, float3(id + float3(i,j,k)) / float3(width, height, depth), 0));
+                float dst = dot(float3(i,j,k), float3(i,j,k));
+                if (dst < 0.5f)
+                {
+                    continue;
+                }
+                
+                maxValue = max(maxValue, _Input.SampleLevel(PointRepeatSampler, float3(id + float3(i,j,k)) / float3(width, height, depth), 0) - decay / dst);
             }
         }
     }
@@ -61,7 +67,7 @@ void Combine (uint3 id : SV_DispatchThreadID)
     float width, height, depth;
     _Input.GetDimensions(width, height, depth);
     float3 uvw = float3(id) / float3(width, height, depth);
-    _Combined[id] = float2(_Input.SampleLevel(PointRepeatSampler, uvw, 0), _SDF.SampleLevel(PointRepeatSampler, uvw, 0) * _Mult);
+    _Combined[id] = float2(_Input.SampleLevel(PointRepeatSampler, uvw, 0), (1.0f - _SDF.SampleLevel(PointRepeatSampler, uvw, 0)) / _Mult);
 }
 
 
@@ -111,4 +117,15 @@ void BruteForce (uint3 id : SV_DispatchThreadID)
 
 
     _Result[id] = sqrt(maxValue) / sqrt(dot(d,d));
+}
+
+
+#pragma kernel Output
+[numthreads(4,4,4)]
+void Output (uint3 id : SV_DispatchThreadID)
+{
+    float width, height, depth;
+    _Input.GetDimensions(width, height, depth);
+    float3 uvw = float3(id) / float3(width, height, depth);
+    _Result[id] = (1.0f - _Input.SampleLevel(PointRepeatSampler, uvw, 0)) / _Mult;
 }

@@ -13,8 +13,11 @@ class VolumetricPass : RaymarcherPass
 {
     //[SerializeField] private Shader volumetricRenderer;
     [SerializeField] private ComputeShader volumetricRendererCompute;
+    [SerializeField] private ComputeShader conemarchComputeShader;
     [SerializeField] private ComputeShader reprojectComputeShader;
     [SerializeField] private ComputeShader volumetricCombine;
+
+    [SerializeField] private int display = 0;
     // [SerializeField] private Shader volumetricCombine;
 
     [SerializeField] private VolumetricParams volumetricParams;
@@ -30,8 +33,10 @@ class VolumetricPass : RaymarcherPass
     [SerializeField] private float sdfMarchDistance = 50;
     
     private RTHandle volumetricTarget;
+    private RTHandle[] conemarchTargets;
 
     private ComputeShader rendererCompute;
+    private ComputeShader conemarchCompute;
     // private Material combineMaterial;
     private ComputeShader combineCompute;
 
@@ -47,10 +52,25 @@ class VolumetricPass : RaymarcherPass
             useDynamicScale: true, name: "Volumetrics Target", enableRandomWrite:true, filterMode: FilterMode.Bilinear
         );
 
+        conemarchTargets = new RTHandle[volumetricParams.conemarchIterations];
+        if (volumetricParams.conemarchIterations > 0)
+        {
+            for (int i = 0; i < volumetricParams.conemarchIterations; i++)
+            {
+                conemarchTargets[i] = RTHandles.Alloc(
+                    Vector2.one / Mathf.Pow(2, volumetricParams.conemarchIterations - i + volumetricParams.conemarchOffset + volumetricParams.downsample), TextureXR.slices, dimension: TextureXR.dimension, 
+                    colorFormat: GraphicsFormat.R16_UNorm,
+                    useDynamicScale: true, name: "Conemarch Targets " + i, enableRandomWrite:true, filterMode: FilterMode.Point, useMipMap:false
+                );
+            }
+
+        }
 
         // combineMaterial = CoreUtils.CreateEngineMaterial(volumetricCombine);
         combineCompute = Object.Instantiate(volumetricCombine);
         rendererCompute = Object.Instantiate(volumetricRendererCompute);
+        conemarchCompute = Object.Instantiate(conemarchComputeShader);
+        
         rendererCompute.SetFloat("_OverStep", 100.0f);
 
         foreach (var customParameter in customParameters)
@@ -71,6 +91,7 @@ class VolumetricPass : RaymarcherPass
         }
         
         rendererCompute.SetKeyword(new LocalKeyword(rendererCompute, "REPROJECT"), reprojection);
+        rendererCompute.SetKeyword(new LocalKeyword(rendererCompute, "CONEMARCH"), volumetricParams.conemarchIterations > 0);
         
         UpdateVariables();
         Debug.Log("Initialise");
@@ -88,9 +109,15 @@ class VolumetricPass : RaymarcherPass
         rendererCompute.SetVector("_SunDirection", -sun.transform.forward);
         rendererCompute.SetVector("_SunColour", sun.color * sunIntensity);
         rendererCompute.SetTexture(0, "_Result", volumetricTarget);
+
+        if (conemarchTargets.Length > 0)
+        {
+            rendererCompute.SetTexture(0, "_Conemarch", conemarchTargets[^1]);
+        }
         // rendererCompute.SetTexture(0, "_SDFMap", sdfMap);
         
         volumetricParams.SetVariables(rendererCompute);
+        volumetricParams.SetVariables(conemarchCompute);
     }
     
     
@@ -117,6 +144,7 @@ class VolumetricPass : RaymarcherPass
     {
         var currentFrustrum = FrustumCorners(ctx.hdCamera.camera);
         rendererCompute.SetVectorArray("_CamFrustrum", currentFrustrum);
+        conemarchCompute.SetVectorArray("_CamFrustrum", currentFrustrum);
 
         int pixelsAmount = (int)Mathf.Pow(2, volumetricParams.downsample);
         Vector4 offset = Vector4.zero;
@@ -130,8 +158,26 @@ class VolumetricPass : RaymarcherPass
         
         rendererCompute.SetTexture(0, "_Result", volumetricTarget, 0, RenderTextureSubElement.Color);
         
+        conemarchCompute.SetFloat("_Downscale", pixelsAmount);
+        conemarchCompute.SetVector("_UpdateOffset", offset);
+
+        if (conemarchTargets.Length > 0)
+        {
+            conemarchCompute.SetFloat("_TanFOV", Mathf.Tan(ctx.hdCamera.camera.fieldOfView * Mathf.Deg2Rad / 2.0f));
+            ctx.cmd.SetComputeFloatParam(conemarchCompute, "_Mult", 0);
+            ctx.cmd.SetComputeTextureParam(conemarchCompute,0, "_Previous", conemarchTargets[0]);
+            for (int i = 0; i < conemarchTargets.Length; i++)
+            {
+                ctx.cmd.SetComputeTextureParam(conemarchCompute,0, "_Result", conemarchTargets[i]);
+                ctx.cmd.DispatchCompute(conemarchCompute, 0, 1 + conemarchTargets[i].rt.width / 8,
+                    1 + conemarchTargets[i].rt.height / 8, 1);
+                ctx.cmd.SetComputeFloatParam(conemarchCompute, "_Mult", 1);
+                ctx.cmd.SetComputeTextureParam(conemarchCompute,0, "_Previous", conemarchTargets[i]);
+            }
+        }
+        
         ctx.cmd.DispatchCompute(rendererCompute, 0, 1 + volumetricTarget.rt.width / 8,
-            1 + volumetricTarget.rt.height / 8, volumetricTarget.rt.mipmapCount);
+            1 + volumetricTarget.rt.height / 8, 1);
 
         if (reprojection)
         {
@@ -150,7 +196,14 @@ class VolumetricPass : RaymarcherPass
         Debug.Log("Cleanup");
         volumetricTarget.Release();
         RTHandles.Release(volumetricTarget);
+
+        foreach (RTHandle conemarchTarget in conemarchTargets)
+        {
+            conemarchTarget.Release();
+            RTHandles.Release(conemarchTarget);
+        }
         CoreUtils.Destroy(combineCompute);
+        CoreUtils.Destroy(conemarchCompute);
         // CoreUtils.Destroy(combineMaterial);
         CoreUtils.Destroy(rendererCompute);
 

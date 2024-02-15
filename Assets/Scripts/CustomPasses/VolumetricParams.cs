@@ -21,9 +21,12 @@ public class VolumetricParams : ScriptableObject
 
     [Header("Marching Parameters")] 
     public float bufferDistance = 10;
+
+    public float sdfNormalisation = 12.48612f;
     public int downsample = 0;
     [Header("Density Parameters")] 
     public Texture3D densityMap;
+    public Texture3D sdfMap;
     public Texture3D detailDensityMap;
     public float density = 1;
     // public float lightDensity = 1;
@@ -31,9 +34,14 @@ public class VolumetricParams : ScriptableObject
     public float detailAmount = -0.25f;
     public float detailScale = 0.05f;
 
+    [Header("Conemarch")]
+    public int conemarchIterations = 5;
+    public int conemarchOffset = 0;
+
     public void SetVariables(ComputeShader rendererCompute)
     {
         rendererCompute.SetTexture(0, "_DensityMap", densityMap);
+        rendererCompute.SetTexture(0, "_SDF", sdfMap);
         rendererCompute.SetTexture(0, "_DetailDensityMap", detailDensityMap);
         rendererCompute.SetFloat("_Density", density);
         // rendererCompute.SetFloat("_LightDensity", lightDensity);
@@ -48,6 +56,7 @@ public class VolumetricParams : ScriptableObject
         rendererCompute.SetFloat("_MinHeight", minHeight);
         rendererCompute.SetFloat("_MaxHeight", maxHeight);
         rendererCompute.SetFloat("_Width", width);
+        rendererCompute.SetFloat("_SDFNorm",  sdfNormalisation);
     }
 
     public void SetVariables(Material meshMaterial)

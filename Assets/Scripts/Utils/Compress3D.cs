@@ -27,13 +27,13 @@ public class Compress3D : MonoBehaviour
 
     private void CompressTexture(Texture3D toCompress)
     {
-        Texture3D newTex = new Texture3D(toCompress.width, toCompress.height, toCompress.depth, GraphicsFormat.R_BC4_UNorm, TextureCreationFlags.None);
+        Texture3D newTex = new Texture3D(toCompress.width, toCompress.height, toCompress.depth, GraphicsFormat.RG_BC5_UNorm, TextureCreationFlags.None);
 
         for (int i = 0; i < toCompress.depth; i++)
         {
-            Texture2D texture = new Texture2D(toCompress.width, toCompress.height, GraphicsFormat.R8_UNorm, TextureCreationFlags.None);
+            Texture2D texture = new Texture2D(toCompress.width, toCompress.height, GraphicsFormat.R8G8_UNorm, TextureCreationFlags.None);
             Graphics.CopyTexture(toCompress, i, texture, 0);
-            EditorUtility.CompressTexture(texture, TextureFormat.BC4, TextureCompressionQuality.Best);
+            EditorUtility.CompressTexture(texture, TextureFormat.BC5, TextureCompressionQuality.Best);
             Graphics.CopyTexture(texture, 0, newTex, i);
             CoreUtils.Destroy(texture);
         }

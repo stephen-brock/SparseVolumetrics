@@ -26,8 +26,10 @@ float _Width;
 // Texture3D<float> _SDFMap;
 // float _SDFMarchDistance;
 
-Texture3D<float> _DensityMap;
-// Texture3D<float2> _DensityMap;
+// Texture3D<float> _DensityMap;
+Texture3D<float2> _DensityMap;
+Texture3D<float> _SDF;
+float _SDFNorm;
 // Texture3D<float> _DetailDensityMap;
 
 float _Downscale;
@@ -100,21 +102,21 @@ float2 Intersection(float3 rayOrigin, float3 invRaydir) {
 //     return max(0, 2.0f * density - 1.35f);
 // }
 
-float SampleMajorDensity(float3 pos)
+float2 SampleMajorDensity(float3 pos)
 {
     return _DensityMap.SampleLevel(s_linear_repeat_sampler, pos / float3(_Width * 2.0f, _MaxHeight - _MinHeight, _Width * 2.0f), 0);
 }
 
-float SampleDensity(float3 pos, float density)
-{
-    return max(0, density);
-    // return max(0, density + _DetailDensityMap.SampleLevel(s_linear_repeat_sampler, pos * _DetailScale, 0) * _DetailAmount);
-}
+// float2 SampleDensity(float3 pos, float density)
+// {
+//     return max(0, density);
+//     // return max(0, density + _DetailDensityMap.SampleLevel(s_linear_repeat_sampler, pos * _DetailScale, 0) * _DetailAmount);
+// }
 
-float SampleFullDensity(float3 pos)
+float2 SampleFullDensity(float3 pos)
 {
     float mult = pos.y > _MaxHeight ? 0 : 1;
-    return SampleDensity(pos, SampleMajorDensity(pos)) * mult;
+    return SampleMajorDensity(pos) * mult;
 }
 // float3 LightRaymarch(float3 pos)
 // {
@@ -154,137 +156,12 @@ float3 LightRaymarch(float3 pos)
         stepDistance *= LIGHT_STEP_MULTIPLIER;
         distance += stepDistance;
         pos += _SunDirection * stepDistance;
-        density += SampleFullDensity(pos) * stepDistance;
+        density += SampleFullDensity(pos).x * stepDistance;
     }
     return exp(-density * _Density) * _SunColour;
 }
 
-// float3 ConstantLightRaymarch(float3 pos)
-// {
-//     float2 tParams = Intersection(pos, 1.0f / _SunDirection);
-//
-//     float distance = 0;
-//     float density = 0;
-//
-//     [loop]
-//     while (distance < tParams.y)
-//     {
-//         distance += _StepDistance;
-//         pos += _SunDirection * _StepDistance;
-//         density += SampleFullDensity(pos);
-//
-//         if (exp(-density * _Density * _StepDistance) < 0.01f)
-//         {
-//             density = 100000;
-//             break;
-//         }
-//     }
-//
-//     return exp(-density * _StepDistance * _Density) * _SunColour;
-//     
-// }
-
-// float SDFRaymarch(float3 startPos, float3 direction, float totalDistance)
-// {
-//     float3 pos = startPos;
-//     float dst = 1.0f - _DensityMap.SampleLevel(s_linear_repeat_sampler, pos * _Scale, 0).y;
-//     
-//     float t = 0;
-//
-//     float stepDst = _SDFMarchDistance * dst;
-//     [loop]
-//     while (t < totalDistance)
-//     {
-//         t += stepDst;
-//         pos += direction * stepDst;
-//         dst = 1.0f - _DensityMap.SampleLevel(s_linear_repeat_sampler, pos * _Scale, 0).y;
-//
-//         if (dst <= 0.1f)
-//         {
-//             break;
-//         }
-//         stepDst = _SDFMarchDistance * dst;
-//     }
-//     return max(0, t - stepDst);
-// }
-
-// float4 Raymarch(float3 startPos, float3 direction, float distance, float totalDistance)
-// {
-//     float3 pos = startPos;
-//     float transmittance = 1;
-//
-//     float3 lightEnergy = 0;
-//     float phase = phaseFunction(dot(direction, _SunDirection));
-//
-//     float t = 0;
-//     // reproj = 0;
-//
-//     [loop]
-//     while (t < totalDistance)
-//     {
-//         t += _StepDistance;
-//         pos += direction * _StepDistance;
-//         float density = SampleFullDensity(pos) * _StepDistance * _Density;
-//
-//         if (density > 0)
-//         {
-//             lightEnergy += (LightRaymarch(pos)) * density * transmittance;
-//             transmittance *= exp(-density);
-//
-//             // if (transmittance > 0.4f && reproj.y < 0.5f)
-//             // {
-//             //     reproj = float2((t + distance) / _ProjectionParams.z, 1);
-//             // }
-//
-//             if (transmittance < 0.01)
-//             {
-//                 transmittance = 0;
-//                 break;
-//             }
-//         }
-//         // float dst = 1.0f - smp.y;
-//         // if (dst > 0)
-//         // {
-//         //     float extend = SDFRaymarch(pos, direction, totalDistance - t);
-//         //     t += extend;
-//         //     pos += direction * extend; 
-//         // }
-//     }
-//     return float4(lightEnergy * phase, 1.0f - transmittance);
-// }
-// float4 ConstantRaymarch(float3 startPos, float3 direction, float distance, float totalDistance)
-// {
-//     float3 pos = startPos;
-//     float transmittance = 1;
-//
-//     float3 lightEnergy = 0;
-//     float phase = phaseFunction(dot(direction, _SunDirection));
-//
-//     float t = 0;
-//
-//     [loop]
-//     while (t < totalDistance)
-//     {
-//         t += _StepDistance;
-//         pos += direction * _StepDistance;
-//         float density = SampleFullDensity(pos) * _StepDistance * _Density;
-//
-//         if (density > 0)
-//         {
-//             //lightEnergy += (ConstantLightRaymarch(pos)) * density * transmittance;
-//             transmittance *= exp(-density);
-//
-//             if (transmittance < 0.01f)
-//             {
-//                 transmittance = 0;
-//                 break;
-//             }
-//         }
-//     }
-//     return float4(lightEnergy * phase, 1.0f - transmittance);
-// }
-
-float4 AdaptiveRaymarch(float3 startPos, float3 direction, float distance, float totalDistance)
+float4 SDFRaymarch(float3 startPos, float3 direction, float distance, float totalDistance)
 {
     float3 pos = startPos;
     float transmittance = 1;
@@ -296,7 +173,6 @@ float4 AdaptiveRaymarch(float3 startPos, float3 direction, float distance, float
     // reproj = 0;
 
     float stepDistance = STEP_DISTANCE;
-    float overstep = 1;
 
     [loop]
     while (t < totalDistance)
@@ -304,19 +180,13 @@ float4 AdaptiveRaymarch(float3 startPos, float3 direction, float distance, float
         stepDistance = max(stepDistance, (1.0f - transmittance) * STEP_DISTANCE * OVER_STEP);
         t += stepDistance;
         pos += direction * stepDistance;
-        float density = SampleFullDensity(pos) * stepDistance * _Density;
+        float2 densityDst = SampleFullDensity(pos);
+        densityDst.x *= stepDistance * _Density;
 
-        if (density > 0)
+        if (densityDst.x > 0)
         {
-            float m = saturate(overstep);
-            density *= (1.0f - m);
-            lightEnergy += (LightRaymarch(pos)) * density * transmittance;
-            transmittance *= exp(-density);
-            
-            t -= stepDistance * m;
-            pos -= direction * stepDistance * m;
-            overstep = -EMPTY_OVER_STEP;
-            stepDistance = STEP_DISTANCE;
+            lightEnergy += (LightRaymarch(pos)) * densityDst.x * transmittance;
+            transmittance *= exp(-densityDst.x);
 
             if (transmittance < 0.01)
             {
@@ -324,11 +194,8 @@ float4 AdaptiveRaymarch(float3 startPos, float3 direction, float distance, float
                 break;
             }
         }
-        else
-        {
-            overstep += 1.0f;
-            stepDistance = lerp(stepDistance, STEP_DISTANCE * EMPTY_OVER_STEP, saturate(overstep));
-        }
+
+        stepDistance = max(STEP_DISTANCE, densityDst.y * _SDFNorm * _Width * 2);
     }
     return float4(lightEnergy * phase, 1.0f - transmittance);
 }

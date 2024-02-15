@@ -30,30 +30,30 @@ public class SignedDistanceField : MonoBehaviour
         RenderTexture temp2 = new RenderTexture(temp1.descriptor);
         temp2.Create();
 
-        shader.SetFloat("_Decay", decay);
+        shader.SetFloat("_Decay", 1.0f / input.width);
         
-        shader.SetTexture(3, "_Input", input);
-        shader.SetTexture(3, "_Result", temp1);
-        shader.Dispatch(3, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
+        // shader.SetTexture(3, "_Input", input);
+        // shader.SetTexture(3, "_Result", temp1);
+        // shader.Dispatch(3, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
 
 
-        // for (int i = 0; i < iterations; i++)
-        // {
-        //     shader.SetTexture(1, "_Input", input);
-        //     shader.SetTexture(1, "_Result", temp1);
-        //     shader.Dispatch(1, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
-        //         
-        //     shader.SetTexture(0, "_Input", temp1);
-        //     shader.SetTexture(0, "_Result", temp2);
-        //     shader.Dispatch(0, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
-        //
-        //     var tmp = temp2;
-        //     temp2 = temp1;
-        //     temp1 = tmp;
-        // }
-        // shader.SetTexture(1, "_Input", input);
-        // shader.SetTexture(1, "_Result", temp1);
-        // shader.Dispatch(1, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
+        for (int i = 0; i < iterations; i++)
+        {
+            shader.SetTexture(1, "_Input", input);
+            shader.SetTexture(1, "_Result", temp1);
+            shader.Dispatch(1, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
+                
+            shader.SetTexture(0, "_Input", temp1);
+            shader.SetTexture(0, "_Result", temp2);
+            shader.Dispatch(0, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
+        
+            var tmp = temp2;
+            temp2 = temp1;
+            temp1 = tmp;
+        }
+        shader.SetTexture(1, "_Input", input);
+        shader.SetTexture(1, "_Result", temp1);
+        shader.Dispatch(1, 1 + input.width / 4, 1 + input.height / 4, 1 + input.depth / 4);
             
         temp2.Release();
         
@@ -67,16 +67,16 @@ public class SignedDistanceField : MonoBehaviour
         var a = new NativeArray<float>(width * height * depth, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); //change if format is not 8 bits (i was using R8_UNorm) (create a struct with 4 bytes etc)
         AsyncGPUReadback.RequestIntoNativeArray(ref a, rt3D, 0, (_) =>
         {
-            float max = 0;
+            float max = 1;
             for (int i = 0; i < a.Length; i++)
             {
-                max = Mathf.Max(a[i], max);
+                max = Mathf.Min(a[i], max);
             }
 
             a.Dispose();
-            print(1.0f / max);
+            print(1.0f - max);
 
-            Combine(rt3D, 1.0f / max);
+            Combine(rt3D, 1.0f - max);
         });
     }
     

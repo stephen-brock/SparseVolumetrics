@@ -1,11 +1,15 @@
 
 #pragma multi_compile_local __ REPROJECT NO_REPROJECT
+#pragma multi_compile_local __ CONEMARCH NO_CONEMARCH
 
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 
 #include "VolumetricCommon.hlsl"
- 
+
+#if CONEMARCH
+Texture2DArray<float> _Conemarch;
+#endif
 RW_TEXTURE2D_X(float4, _Result);
 #if REPROJECT
 RW_TEXTURE2D_X(float2, _ReprojectionPositions);
@@ -25,17 +29,23 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float depth = LinearEyeDepth(SampleCameraDepth(uv), _ZBufferParams);
     float3 viewDirection = getViewDir(uv);
     float3 viewDepth = length(viewDirection.xyz * depth);
+    //TODO REMOVE NORM
     viewDirection = normalize(viewDirection);
     
-    float2 tParams = Intersection(_WorldSpaceCameraPos, 1.0f / viewDirection);
+    float2 tParams = Intersection(_WorldSpaceCameraPos + viewDirection, 1.0f / viewDirection);
+#if CONEMARCH
+    float diff = max(0, _Conemarch.SampleLevel(s_point_clamp_sampler, float3(uv, 0), 0) * 2 * _Width - tParams.x);
+#endif
+    // float diff = 0;
     
     float depthExtended = viewDepth >= _ProjectionParams.z - 1.0f ? 10000000 : viewDepth; 
     tParams.y = min(tParams.y + tParams.x, depthExtended) - tParams.x;
-    float3 startPos = _WorldSpaceCameraPos + viewDirection * (tParams.x + Random(pixel.x / 11.9f + _Time.y * pixel.y / 18.5f) * STEP_DISTANCE);
-    // float extend = SDFRaymarch(startPos, viewDirection, tParams.y);
-    // startPos += viewDirection * extend;
-    // tParams.x += extend;
-    // tParams.y -= extend;
+#if CONEMARCH
+    tParams.y -= diff;
+    tParams.x += diff;
+#endif
+    float3 startPos = _WorldSpaceCameraPos + viewDirection * tParams.x;
+    // float3 startPos = _WorldSpaceCameraPos + viewDirection * (tParams.x + Random(pixel.x / 11.9f + _Time.y * pixel.y / 18.5f) * STEP_DISTANCE);
     #if REPROJECT
     _ReprojectionPositions[id] = float2(tParams.x / _ProjectionParams.z, 0);
     #endif
@@ -46,7 +56,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
 
     // float2 reproj;
-    float4 col = AdaptiveRaymarch(startPos, viewDirection, tParams.x, tParams.y);
+    float4 col = SDFRaymarch(startPos, viewDirection, tParams.x, tParams.y);
     // float4 col = Raymarch(startPos, viewDirection, tParams.x, tParams.y);
     // #if REPROJECT
     // if (reproj.y > 0.5f)
