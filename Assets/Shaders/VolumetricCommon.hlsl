@@ -245,8 +245,8 @@ float4 BlockWalk(float3 p, float3 worldPos, float3 dir, float3 brick, float tran
     float3 t1 = (1.0f - p) / (dir + 0.0001f);
     float3 tmin = min(t0, t1);
     float3 tmax = max(t0, t1);
-    float fromDst = max(max(tmin.x, tmin.y), tmin.z) + 0.05;
-    float toDst = min(tmax.x, min(tmax.y, tmax.z)) - 0.005f;
+    float fromDst = max(max(tmin.x, tmin.y), tmin.z);
+    float toDst = min(tmax.x, min(tmax.y, tmax.z));
     float4 output = float4(0,0,0,transmittance);
     [loop]
     while (fromDst < toDst)

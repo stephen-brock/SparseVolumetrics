@@ -70,7 +70,7 @@ void Build (uint3 id : SV_DispatchThreadID)
     mapID.x = id.x - mapID.y * w2 - mapID.z * w2 * h2;
     mapID *= _BrickSize + 2;
     mapID += 1;
-    _Map[brick] = float4(float3(mapID + 1) / ((_BrickSize + 2) * float3(w2,h2,d2)), 1.0f);
+    _Map[brick] = float4(float3(mapID) / ((_BrickSize + 2) * float3(w2,h2,d2)), 1.0f);
     
     for (float i = -1; i < _BrickSize + 1; i++)
     {
