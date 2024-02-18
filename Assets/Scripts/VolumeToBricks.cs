@@ -52,13 +52,13 @@ public class VolumeToBricks : MonoBehaviour
             int count = (counter[0]);
 
             // int width = Mathf.CeilToInt(Mathf.Pow(count, 1.0f / 3.0f));
-            RenderTexture map = new RenderTexture(tex.width / brickSize, tex.height / brickSize, 0, GraphicsFormat.R16G16B16A16_SNorm);
+            RenderTexture map = new RenderTexture(tex.width / brickSize, tex.height / brickSize, 0, GraphicsFormat.R32G32B32A32_SFloat);
             map.dimension = TextureDimension.Tex3D;
             map.volumeDepth = tex.depth / brickSize;
             map.enableRandomWrite = true;
             map.Create();
             
-            int widthBricks = Mathf.CeilToInt(Mathf.Pow(count * brickSize * brickSize * brickSize, 1.0f / 3.0f));
+            int widthBricks = Mathf.CeilToInt(Mathf.Pow(count * (brickSize + 2) * (brickSize + 2) * (brickSize + 2), 1.0f / 3.0f));
             RenderTexture bricks = new RenderTexture(widthBricks, widthBricks, 0, GraphicsFormat.R8_UNorm);
             bricks.dimension = TextureDimension.Tex3D;
             bricks.volumeDepth = widthBricks;

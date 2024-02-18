@@ -123,90 +123,90 @@ float2 SampleFullDensity(float3 pos)
     return SampleMajorDensity(pos) * mult;
 }
 
-float LightBlockWalk(float3 p, float3 worldPos, float3 brick)
-{
-    float3 t0 = (0.f - p) / (_SunDirection + 0.0001f);
-    float3 t1 = (1.0f - p) / (_SunDirection + 0.0001f);
-    float3 tmin = min(t0, t1);
-    float3 tmax = max(t0, t1);
-    float fromDst = max(max(tmin.x, tmin.y), tmin.z) + 0.005f;
-    float toDst = min(tmax.x, min(tmax.y, tmax.z));
-    float transmittance = 1;
-    [loop]
-    while (fromDst < toDst)
-    {
-        float3 brickPos = p + _SunDirection * fromDst;
-        fromDst += STEP_DISTANCE / (_BrickCellSize );
-            
-        float density = _Bricks.SampleLevel(s_point_clamp_sampler, brick.xyz + ((brickPos * _BrickSize) * _InvBrick), 0) * STEP_DISTANCE * _Density;
-        
-        transmittance *= exp(-density);
-    }
-    return transmittance;
-}
-
-float3 FullLightRaymarch(float3 pos)
-{
-    float2 tParams = Intersection((pos - float3(_Width, -_MinHeight, _Width)), 1.0f / _SunDirection);
-
-    float transmittance = 1;
-
-    float3 lightEnergy = 0;
-
-    float t = 0;
-
-    float3 invDir = 1.0f / (abs(_SunDirection));
-
-    pos = ((pos) / _BrickCellSize);
-    float3 startPos = pos;
-
-    float3 initDst = (floor(pos) - pos + (sign(_SunDirection) + 1.0f) / 2.0f) / _SunDirection;
-    float3 dst = initDst;
-
-    pos = floor(pos);
-    
-    [loop]
-    while (t < tParams.y)
-    {
-        float4 brick = _BrickMap.Load(float4(pos, 0));
-        if (brick.a > 0)
-        {
-            float3 p = (startPos + t * _SunDirection / _BrickCellSize) - pos;
-
-            transmittance *= LightBlockWalk(p, pos, brick);
-
-            
-            if (transmittance < 0.01f)
-            {
-                break;
-            }
-        }
-        
-        //https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-acceleration-structure/grid.html
-        if (dst.z < min(dst.x, dst.y))
-        {
-            t = dst.z * _BrickCellSize;
-            dst.z += invDir.z;
-            pos.z += sign(_SunDirection.z);
-        }
-        else
-        {
-            if (dst.x < dst.y)
-            {
-                t = dst.x * _BrickCellSize; // current t, next intersection with cell along ray
-                dst.x += invDir.x; // increment, next crossing along x
-                pos.x += sign(_SunDirection.x);
-            }
-            else
-            {
-                t = dst.y * _BrickCellSize;
-                dst.y += invDir.y; // increment, next crossing along y
-                pos.y += sign(_SunDirection.y);
-            }
-        }
-    }
-    return transmittance * _SunColour;
-}
+// float LightBlockWalk(float3 p, float3 worldPos, float3 brick)
+// {
+//     float3 t0 = (0.f - p) / (_SunDirection + 0.0001f);
+//     float3 t1 = (1.0f - p) / (_SunDirection + 0.0001f);
+//     float3 tmin = min(t0, t1);
+//     float3 tmax = max(t0, t1);
+//     float fromDst = max(max(tmin.x, tmin.y), tmin.z) + 1.0f / (_BrickSize);
+//     float toDst = min(tmax.x, min(tmax.y, tmax.z));
+//     float transmittance = 1;
+//     [loop]
+//     while (fromDst < toDst)
+//     {
+//         float3 brickPos = p + _SunDirection * fromDst;
+//         fromDst += STEP_DISTANCE / (_BrickCellSize );
+//             
+//         float density = _Bricks.SampleLevel(s_point_clamp_sampler, brick.xyz + ((brickPos * _BrickSize)) * _InvBrick), 0) * STEP_DISTANCE * _Density;
+//         
+//         transmittance *= exp(-density);
+//     }
+//     return transmittance;
+// }
+//
+// float3 FullLightRaymarch(float3 pos)
+// {
+//     float2 tParams = Intersection((pos - float3(_Width, -_MinHeight, _Width)), 1.0f / _SunDirection);
+//
+//     float transmittance = 1;
+//
+//     float3 lightEnergy = 0;
+//
+//     float t = 0;
+//
+//     float3 invDir = 1.0f / (abs(_SunDirection));
+//
+//     pos = ((pos) / _BrickCellSize);
+//     float3 startPos = pos;
+//
+//     float3 initDst = (floor(pos) - pos + (sign(_SunDirection) + 1.0f) / 2.0f) / _SunDirection;
+//     float3 dst = initDst;
+//
+//     pos = floor(pos);
+//     
+//     [loop]
+//     while (t < tParams.y)
+//     {
+//         float4 brick = _BrickMap.Load(float4(pos, 0));
+//         if (brick.a > 0)
+//         {
+//             float3 p = (startPos + t * _SunDirection / _BrickCellSize) - pos;
+//
+//             transmittance *= LightBlockWalk(p, pos, brick);
+//
+//             
+//             if (transmittance < 0.01f)
+//             {
+//                 break;
+//             }
+//         }
+//         
+//         //https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-acceleration-structure/grid.html
+//         if (dst.z < min(dst.x, dst.y))
+//         {
+//             t = dst.z * _BrickCellSize;
+//             dst.z += invDir.z;
+//             pos.z += sign(_SunDirection.z);
+//         }
+//         else
+//         {
+//             if (dst.x < dst.y)
+//             {
+//                 t = dst.x * _BrickCellSize; // current t, next intersection with cell along ray
+//                 dst.x += invDir.x; // increment, next crossing along x
+//                 pos.x += sign(_SunDirection.x);
+//             }
+//             else
+//             {
+//                 t = dst.y * _BrickCellSize;
+//                 dst.y += invDir.y; // increment, next crossing along y
+//                 pos.y += sign(_SunDirection.y);
+//             }
+//         }
+//     }
+//     return transmittance * _SunColour;
+// }
 
 float3 LightRaymarch(float3 pos)
 {
@@ -231,7 +231,7 @@ float3 LightRaymarch(float3 pos)
         {
             float3 p = (startPos + t * _SunDirection / _BrickCellSize) - pos;
 
-            density += _Bricks.SampleLevel(s_point_clamp_sampler, brick.xyz + (p * _BrickSize) * _InvBrick, 0) * stepDst;
+            density += _Bricks.SampleLevel(s_linear_repeat_sampler, brick.xyz + (p * (_BrickSize)) * _InvBrick, 0) * stepDst;
         }
     }
     return exp(-density * _Density) * _SunColour;
@@ -245,16 +245,16 @@ float4 BlockWalk(float3 p, float3 worldPos, float3 dir, float3 brick, float tran
     float3 t1 = (1.0f - p) / (dir + 0.0001f);
     float3 tmin = min(t0, t1);
     float3 tmax = max(t0, t1);
-    float fromDst = max(max(tmin.x, tmin.y), tmin.z) + 0.005f;
-    float toDst = min(tmax.x, min(tmax.y, tmax.z));
+    float fromDst = max(max(tmin.x, tmin.y), tmin.z) + 0.05;
+    float toDst = min(tmax.x, min(tmax.y, tmax.z)) - 0.005f;
     float4 output = float4(0,0,0,transmittance);
     [loop]
     while (fromDst < toDst)
     {
         float3 brickPos = p + dir * fromDst;
-        fromDst += STEP_DISTANCE / (_BrickCellSize );
+        fromDst += STEP_DISTANCE / (_BrickCellSize);
             
-        float density = _Bricks.SampleLevel(s_point_clamp_sampler, brick.xyz + ((brickPos * _BrickSize) * _InvBrick), 0) * STEP_DISTANCE * _Density;
+        float density = _Bricks.SampleLevel(s_linear_repeat_sampler, brick.xyz + ((brickPos * _BrickSize) * _InvBrick), 0) * STEP_DISTANCE * _Density;
         
         output.xyz += output.w * density * LightRaymarch((worldPos + brickPos) * _BrickCellSize);
         output.w *= exp(-density);
@@ -289,7 +289,6 @@ float4 OctTreeRaymarch(float3 startPos, float3 direction, float distance, float 
     [loop]
     while (t < totalDistance)
     {
-        
         float4 brick = _BrickMap.Load(float4(pos, 0));
         if (brick.a > 0)
         {
@@ -304,6 +303,7 @@ float4 OctTreeRaymarch(float3 startPos, float3 direction, float distance, float 
                 break;
             }
         }
+        
         //https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-acceleration-structure/grid.html
         if (dst.z < min(dst.x, dst.y))
         {

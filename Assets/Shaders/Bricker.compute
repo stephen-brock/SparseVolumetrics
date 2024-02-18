@@ -62,22 +62,23 @@ void Build (uint3 id : SV_DispatchThreadID)
     _Map.GetDimensions(w,h,d);
     float w2,h2,d2;
     _BricksBuilt.GetDimensions(w2,h2,d2);
-    w2 /= _BrickSize;
-    h2 /= _BrickSize;
-    d2 /= _BrickSize;
+    w2 /= _BrickSize + 2;
+    h2 /= _BrickSize + 2;
+    d2 /= _BrickSize + 2;
     uint3 mapID = uint3(0,0, floor(id.x / (w2 * h2)));
     mapID.y = floor((id.x - mapID.z * w2 * h2) / w2);
     mapID.x = id.x - mapID.y * w2 - mapID.z * w2 * h2;
-    _Map[brick] = float4(float3(mapID) / float3(w2,h2,d2), 1.0f);
-    mapID *= _BrickSize;
+    mapID *= _BrickSize + 2;
+    mapID += 1;
+    _Map[brick] = float4(float3(mapID + 1) / ((_BrickSize + 2) * float3(w2,h2,d2)), 1.0f);
     
-    for (uint i = 0; i < _BrickSize; i++)
+    for (float i = -1; i < _BrickSize + 1; i++)
     {
-        for (uint j = 0; j < _BrickSize; j++)
+        for (float j = -1; j < _BrickSize + 1; j++)
         {
-            for (uint k = 0; k < _BrickSize; k++)
+            for (float k = -1; k < _BrickSize + 1; k++)
             {
-                _BricksBuilt[mapID + uint3(i,j,k)] = _Bricks.SampleLevel(s_point_clamp_sampler, (brick * _BrickSize + float3(i,j,k)) / float3(width,height,depth), 0);
+                _BricksBuilt[mapID + float3(i,j,k)] = _Bricks.SampleLevel(s_point_clamp_sampler, (brick * _BrickSize + float3(i,j,k)) / float3(width,height,depth), 0);
             }
         }
     }
