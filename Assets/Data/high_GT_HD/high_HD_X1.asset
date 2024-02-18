@@ -21,9 +21,16 @@ MonoBehaviour:
   maxHeight: 5500
   width: 10000
   bufferDistance: 38.7
+  sdfNormalisation: 12.48612
   downsample: 2
   densityMap: {fileID: 11700000, guid: c45304b9487e2de43bf8d22ad160b204, type: 2}
+  sdfMap: {fileID: 0}
+  brickMap: {fileID: 0}
+  bricks: {fileID: 0}
+  brickSize: 8
   detailDensityMap: {fileID: 11700000, guid: 3851f2a8a4cfbd74ca9a27aedacbfbba, type: 2}
   density: 0.05
   detailAmount: -0.25
   detailScale: 0.0008
+  conemarchIterations: 0
+  conemarchOffset: 0

@@ -56,7 +56,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
 
     // float2 reproj;
-    float4 col = SDFRaymarch(startPos, viewDirection, tParams.x, tParams.y);
+    float4 col = OctTreeRaymarch(startPos, viewDirection, tParams.x, tParams.y);
     // float4 col = Raymarch(startPos, viewDirection, tParams.x, tParams.y);
     // #if REPROJECT
     // if (reproj.y > 0.5f)

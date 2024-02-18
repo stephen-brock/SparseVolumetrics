@@ -91,7 +91,7 @@ class VolumetricPass : RaymarcherPass
         }
         
         rendererCompute.SetKeyword(new LocalKeyword(rendererCompute, "REPROJECT"), reprojection);
-        rendererCompute.SetKeyword(new LocalKeyword(rendererCompute, "CONEMARCH"), volumetricParams.conemarchIterations > 0);
+        // rendererCompute.SetKeyword(new LocalKeyword(rendererCompute, "CONEMARCH"), volumetricParams.conemarchIterations > 0);
         
         UpdateVariables();
         Debug.Log("Initialise");

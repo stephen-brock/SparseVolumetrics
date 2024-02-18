@@ -1,0 +1,19 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "Packages/com.unity.render-pipelines.high-definition/Runtime/RenderPipeline/RenderPass/CustomPass/CustomPassCommon.hlsl"
+
+TEXTURE2D_X(_Volumetrics);
+// TEXTURE2D_X(_Read);
+RW_TEXTURE2D_X(float4, _Result);
+float _ScreenScale;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float width, height;
+    float elements;
+    _Result.GetDimensions(width, height, elements);
+    float4 volume = _Volumetrics.SampleLevel(s_trilinear_clamp_sampler, float3(id.xy, 0) / float3(width, height, 1), 0);
+    _Result[id] = float4(lerp(_Result[id], volume.xyz, volume.a), _Result[id].a);
+}

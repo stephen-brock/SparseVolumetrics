@@ -23,6 +23,7 @@ public class TextureGenerator : MonoBehaviour
     [Space] [SerializeField] private bool run;
     [SerializeField] private bool runAndSave;
     [SerializeField] private string name;
+    
     private void OnValidate()
     {
         if (run)

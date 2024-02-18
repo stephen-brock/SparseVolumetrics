@@ -27,6 +27,9 @@ public class VolumetricParams : ScriptableObject
     [Header("Density Parameters")] 
     public Texture3D densityMap;
     public Texture3D sdfMap;
+    public Texture3D brickMap;
+    public Texture3D bricks;
+    [SerializeField] private int brickSize = 8;
     public Texture3D detailDensityMap;
     public float density = 1;
     // public float lightDensity = 1;
@@ -41,14 +44,21 @@ public class VolumetricParams : ScriptableObject
     public void SetVariables(ComputeShader rendererCompute)
     {
         rendererCompute.SetTexture(0, "_DensityMap", densityMap);
-        rendererCompute.SetTexture(0, "_SDF", sdfMap);
         rendererCompute.SetTexture(0, "_DetailDensityMap", detailDensityMap);
+        if (bricks != null)
+        {
+            rendererCompute.SetTexture(0, "_Bricks", bricks);
+            rendererCompute.SetTexture(0, "_BrickMap", brickMap);
+            rendererCompute.SetFloat("_BrickCellSize",  (maxHeight - minHeight) / brickMap.height);
+            rendererCompute.SetVector("_InvBrick",  new Vector4(1.0f / bricks.width, 1.0f / bricks.height, 1.0f / bricks.depth));
+        }
         rendererCompute.SetFloat("_Density", density);
         // rendererCompute.SetFloat("_LightDensity", lightDensity);
         // rendererCompute.SetVector("_Scale", scale);
         rendererCompute.SetVector("_AmbientColour", ambientColour * ambientMult);
         rendererCompute.SetVector("_TotalAmbientColour", totalAmbientColour);
         rendererCompute.SetFloat("_DetailScale", detailScale);
+        rendererCompute.SetInt("_BrickSize", brickSize);
         rendererCompute.SetFloat("_DetailAmount", detailAmount);
         rendererCompute.SetFloat("_Phase", phase);
         rendererCompute.SetFloat("_Phase2", phase2);

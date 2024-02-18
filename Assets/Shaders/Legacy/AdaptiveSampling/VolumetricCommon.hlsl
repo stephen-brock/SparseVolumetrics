@@ -102,7 +102,7 @@ float2 Intersection(float3 rayOrigin, float3 invRaydir) {
 
 float SampleMajorDensity(float3 pos)
 {
-    return _DensityMap.SampleLevel(s_linear_repeat_sampler, pos / float3(_Width * 2.0f, _MaxHeight - _MinHeight, _Width * 2.0f), 0);
+    return _DensityMap.SampleLevel(s_linear_repeat_sampler, (pos + float3(_Width, -_MinHeight, _Width)) / float3(_Width * 2.0f, _MaxHeight - _MinHeight, _Width * 2.0f), 0);
 }
 
 float SampleDensity(float3 pos, float density)
