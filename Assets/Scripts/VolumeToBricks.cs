@@ -52,7 +52,7 @@ public class VolumeToBricks : MonoBehaviour
             int count = (counter[0]);
 
             // int width = Mathf.CeilToInt(Mathf.Pow(count, 1.0f / 3.0f));
-            RenderTexture map = new RenderTexture(tex.width / brickSize, tex.height / brickSize, 0, GraphicsFormat.R32G32B32A32_SFloat);
+            RenderTexture map = new RenderTexture(tex.width / brickSize, tex.height / brickSize, 0, GraphicsFormat.R16G16B16A16_SFloat);
             map.dimension = TextureDimension.Tex3D;
             map.volumeDepth = tex.depth / brickSize;
             map.enableRandomWrite = true;

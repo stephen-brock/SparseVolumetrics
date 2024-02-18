@@ -4,6 +4,9 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl" // required by the below file (I believe)
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl" // for TEXTURE2D_X() and RW_TEXTURE2D_X
 
+//https://discussions.unity.com/t/how-do-int-textures-work-in-computeshaders/246832/2
+#define EncodeUintToFloat(u) (asfloat(u | 0x40000000))
+#define DecodeFloatToUint(f) (asuint(f) & 0xBFFFFFFF)
 
 static const float STEP_DISTANCE = 38;
 // static const float LIGHT_STEP_DISTANCE = 19;
@@ -226,12 +229,12 @@ float3 LightRaymarch(float3 pos)
         stepDst *= LIGHT_STEP_MULTIPLIER;
         t += stepDst;
         pos = floor((startPos + t * _SunDirection / _BrickCellSize));
-        float4 brick = _BrickMap.Load(float4(pos, 0));
+        float4 brick = (_BrickMap.Load(float4(pos, 0)));
         if (brick.a > 0)
         {
             float3 p = (startPos + t * _SunDirection / _BrickCellSize) - pos;
 
-            density += _Bricks.SampleLevel(s_linear_repeat_sampler, brick.xyz + (p * (_BrickSize)) * _InvBrick, 0) * stepDst;
+            density += _Bricks.SampleLevel(s_linear_repeat_sampler, brick.xyz * _InvBrick + (p * (_BrickSize)) * _InvBrick, 0) * stepDst;
         }
     }
     return exp(-density * _Density) * _SunColour;
@@ -289,12 +292,12 @@ float4 OctTreeRaymarch(float3 startPos, float3 direction, float distance, float 
     [loop]
     while (t < totalDistance)
     {
-        float4 brick = _BrickMap.Load(float4(pos, 0));
+        float4 brick = (_BrickMap.Load(float4(pos, 0)));
         if (brick.a > 0)
         {
             float3 p = (startPos + t * direction / _BrickCellSize) - pos;
 
-            float4 block = BlockWalk(p, pos, direction, brick, transmittance);
+            float4 block = BlockWalk(p, pos, direction, brick.xyz * _InvBrick, transmittance);
 
             lightEnergy += block.xyz;
             transmittance = block.w;
