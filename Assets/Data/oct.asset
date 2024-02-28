@@ -25,8 +25,8 @@ MonoBehaviour:
   downsample: 0
   densityMap: {fileID: 11700000, guid: 374c54e9509689f4dbd59d9f46f25816, type: 2}
   sdfMap: {fileID: 11700000, guid: a5e7da3498d658c43add435c5da8f782, type: 2}
-  brickMap: {fileID: 11700000, guid: fe25a03e5d69d3e41ad7d56157b152d9, type: 2}
-  bricks: {fileID: 11700000, guid: 66cf883ad2ce54f44a2c84b28fd5f7d2, type: 2}
+  brickMap: {fileID: 0}
+  bricks: {fileID: 0}
   brickSize: 8
   detailDensityMap: {fileID: 11700000, guid: 3851f2a8a4cfbd74ca9a27aedacbfbba, type: 2}
   density: 0.05

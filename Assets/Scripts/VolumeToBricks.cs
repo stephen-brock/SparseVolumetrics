@@ -13,6 +13,8 @@ public class VolumeToBricks : MonoBehaviour
     [SerializeField] private ComputeShader bricker;
     [SerializeField] private int brickSize = 8;
 
+    [SerializeField] private int mipCount = 3;
+
     [SerializeField] private bool brick;
     [SerializeField] private string saveName;
     [SerializeField] private RenderTexture output;
@@ -57,6 +59,7 @@ public class VolumeToBricks : MonoBehaviour
             map.volumeDepth = tex.depth / brickSize;
             map.enableRandomWrite = true;
             map.Create();
+
             
             int widthBricks = Mathf.CeilToInt(Mathf.Pow(count * (brickSize + 2) * (brickSize + 2) * (brickSize + 2), 1.0f / 3.0f));
             RenderTexture bricks = new RenderTexture(widthBricks, widthBricks, 0, GraphicsFormat.R8_UNorm);
@@ -64,19 +67,36 @@ public class VolumeToBricks : MonoBehaviour
             bricks.volumeDepth = widthBricks;
             bricks.enableRandomWrite = true;
             bricks.Create();
-
+            
             bricker.SetBuffer(1, "_UnbuiltBricks", appendBuffer);
             bricker.SetTexture(1, "_Map", map);
             bricker.SetTexture(1, "_Bricks", tex);
             bricker.SetTexture(1, "_BricksBuilt", bricks);
             bricker.SetInt("_Count", count);
             bricker.Dispatch(1, count, 1, 1);
+
+            
+            RenderTexture cascade = new RenderTexture(tex.width / (brickSize * 2), tex.height / (brickSize * 2), 0, GraphicsFormat.R8_UNorm, mipCount);
+            cascade.dimension = TextureDimension.Tex3D;
+            cascade.volumeDepth = tex.depth / (brickSize * 2);
+            cascade.enableRandomWrite = true;
+            cascade.useMipMap = true;
+            cascade.autoGenerateMips = false;
+            cascade.Create();
+            
+            bricker.SetTexture(2, "_Cascade", cascade);
+            bricker.SetTexture(2, "_Bricks", tex);
+            bricker.SetFloat("_BrickSize", brickSize * 2);
+            bricker.Dispatch(2, cascade.width, cascade.height, cascade.volumeDepth);
             
             output = map;
             outputBricks = bricks;
             
+            cascade.GenerateMips();
+
             SaveRT3DToTexture3DAsset(map, saveName + "_map");
             SaveRT3DToTexture3DAsset2(bricks, saveName + "_bricks");
+            SaveRT3DToTexture3DAsset2(cascade, saveName + "_cascade");
             
             appendBuffer.Dispose();
             countBuffer.Dispose();
@@ -113,9 +133,9 @@ public class VolumeToBricks : MonoBehaviour
         var a = new NativeArray<float>(width * height * depth, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); //change if format is not 8 bits (i was using R8_UNorm) (create a struct with 4 bytes etc)
         AsyncGPUReadback.RequestIntoNativeArray(ref a, rt3D, 0, (_) =>
         {
-            Texture3D output = new Texture3D(width, height, depth, rt3D.graphicsFormat, TextureCreationFlags.None);
+            Texture3D output = new Texture3D(width, height, depth, rt3D.graphicsFormat, TextureCreationFlags.MipChain, mipCount);
             output.SetPixelData(a, 0);
-            output.Apply(updateMipmaps: false, makeNoLongerReadable: true);
+            output.Apply(updateMipmaps: true, makeNoLongerReadable: true);
 #if UNITY_EDITOR
             AssetDatabase.CreateAsset(output, $"Assets/{pathWithoutAssetsAndExtension}.asset");
             AssetDatabase.SaveAssetIfDirty(output);

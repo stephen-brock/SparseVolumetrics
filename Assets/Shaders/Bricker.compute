@@ -88,3 +88,32 @@ void Build (uint3 id : SV_DispatchThreadID)
         }
     }
 }
+
+
+#pragma kernel Cascade
+
+RWTexture3D<float> _Cascade;
+
+[numthreads(1,1,1)]
+void Cascade (uint3 id : SV_DispatchThreadID)
+{
+    float width, height, depth;
+    _Bricks.GetDimensions(width, height, depth);
+
+    float3 uvw = _BrickSize * id / float3(width, height, depth);
+    
+    float sum = 0;
+
+    for (uint i = 0; i < _BrickSize; i++)
+    {
+        for (uint j = 0; j < _BrickSize; j++)
+        {
+            for (uint k = 0; k < _BrickSize; k++)
+            {
+                sum += _Bricks.SampleLevel(s_point_clamp_sampler, uvw + float3(i,j,k) / float3(width,height,depth), 0);
+            }
+        }
+    }
+
+    _Cascade[id] = sum;
+}
